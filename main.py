@@ -3,6 +3,7 @@ import sys
 import cv2
 import numpy as np
 import mediapipe as mp
+import math
 
 # Initialize Pygame
 pygame.init()
@@ -11,11 +12,15 @@ pygame.init()
 screen_width = 500
 screen_height = 800
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Webcam and Dual Hand Recognition Example")
+pygame.display.set_caption("Webcam and ASL + Full-Body Recognition Example")
 
 # Colors
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
+BLACK = (0, 0, 0)
+
+# Font
+font = pygame.font.Font(None, 74)
 
 # Webcam settings
 cap = cv2.VideoCapture(0)  # Use the first camera (default webcam)
@@ -30,17 +35,59 @@ mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5)
 mp_drawing = mp.solutions.drawing_utils
 
-# Get the webcam frame dimensions
-ret, frame = cap.read()
-frame_height, frame_width = frame.shape[:2]
+# MediaPipe Pose setup for full body recognition
+mp_pose = mp.solutions.pose
+pose = mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-# Resize the frame to fit the top half of the screen
-top_half_height = screen_height // 2
-aspect_ratio = frame_width / frame_height
-frame_width_resized = int(top_half_height * aspect_ratio)
+def calculate_distance(point1, point2):
+    return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
+
+def recognize_asl_letter(landmarks):
+    """
+    A basic example of recognizing letters "A", "B", and "C"
+    using relative distances of certain hand landmarks.
+    This is a very simplified approximation.
+    """
+
+    # Example letter "A": all fingers curled except the thumb
+    if (landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_DIP].y >
+            landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_PIP].y and
+        landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_DIP].y >
+            landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_PIP].y and
+        landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_DIP].y >
+            landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_PIP].y and
+        landmarks.landmark[mp_hands.HandLandmark.PINKY_DIP].y >
+            landmarks.landmark[mp_hands.HandLandmark.PINKY_PIP].y and
+        landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP].x >
+            landmarks.landmark[mp_hands.HandLandmark.THUMB_IP].x):
+        return "A"
+
+    # Example letter "B": All fingers extended and close together, thumb across palm
+    if (landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP].y >
+            landmarks.landmark[mp_hands.HandLandmark.THUMB_IP].y and
+        all(landmarks.landmark[i].y < landmarks.landmark[i - 1].y
+            for i in range(mp_hands.HandLandmark.INDEX_FINGER_TIP.value, 
+                           mp_hands.HandLandmark.PINKY_TIP.value + 1))):
+        return "B"
+
+    # Example letter "C": Hand forming a "C" shape, fingers curved
+    distance_thumb_index = calculate_distance(
+        landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP],
+        landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP])
+    distance_thumb_pinky = calculate_distance(
+        landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP],
+        landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP])
+    
+    if distance_thumb_index > 0.05 and distance_thumb_pinky > 0.1:
+        return "C"
+
+    # If no recognized gesture, return empty
+    return ""
+
 
 # Main loop
 running = True
+recognized_letter = ""
 while running:
     # Handle events
     for event in pygame.event.get():
@@ -55,15 +102,22 @@ while running:
 
     # Process the frame with MediaPipe for hand detection
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = hands.process(frame_rgb)
+    results_hands = hands.process(frame_rgb)
+    results_pose = pose.process(frame_rgb)
 
-    # Draw hand landmarks on the frame if detected
-    if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
+    # Draw hand landmarks and recognize ASL letter if a hand is detected
+    if results_hands.multi_hand_landmarks:
+        for hand_landmarks in results_hands.multi_hand_landmarks:
             mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            # Recognize ASL letter based on landmarks (dummy function)
+            recognized_letter = recognize_asl_letter(hand_landmarks)
+    
+    # Draw body landmarks
+    if results_pose.pose_landmarks:
+        mp_drawing.draw_landmarks(frame, results_pose.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
     # Resize frame to fit the top half of the screen
-    frame_resized = cv2.resize(frame, (frame_width_resized, top_half_height))
+    frame_resized = cv2.resize(frame, (screen_width, screen_height // 2))
 
     # Convert the frame from BGR to RGB (since Pygame uses RGB)
     frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
@@ -77,17 +131,17 @@ while running:
     # Draw the webcam feed (top half of the screen)
     screen.blit(frame_surface, (0, 0))  # top left corner of the screen
 
-    # Draw a red vertical rectangle on the bottom half of the screen
-    rect_width = 100
-    rect_height = 300
-    rect_x = (screen_width - rect_width) // 2  # Center the rectangle horizontally
-    rect_y = screen_height // 2 + 50  # Position it in the bottom half of the screen
+    # Draw the recognized letter as text on the bottom half of the screen
+    text_surface = font.render(f"Letter: {recognized_letter}", True, BLACK)
+    text_rect = text_surface.get_rect(center=(screen_width // 2, screen_height // 2 + 200))
+    screen.blit(text_surface, text_rect)
 
     # Update the display
     pygame.display.flip()
 
 # Release the webcam and quit Pygame
 cap.release()
+pose.close()
 hands.close()
 pygame.quit()
 sys.exit()
