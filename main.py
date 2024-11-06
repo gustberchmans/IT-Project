@@ -11,10 +11,11 @@ pygame.init()
 screen_width = 500
 screen_height = 800
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Webcam and Hand Recognition Example")
+pygame.display.set_caption("Webcam and Dual Hand Recognition Example")
 
 # Colors
 WHITE = (255, 255, 255)
+RED = (255, 0, 0)
 
 # Webcam settings
 cap = cv2.VideoCapture(0)  # Use the first camera (default webcam)
@@ -24,9 +25,9 @@ if not cap.isOpened():
     print("Error: Could not access the webcam.")
     sys.exit()
 
-# MediaPipe hands setup
+# MediaPipe hands setup for detecting up to 2 hands
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, min_detection_confidence=0.5)
+hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5)
 mp_drawing = mp.solutions.drawing_utils
 
 # Get the webcam frame dimensions
@@ -37,7 +38,6 @@ frame_height, frame_width = frame.shape[:2]
 top_half_height = screen_height // 2
 aspect_ratio = frame_width / frame_height
 frame_width_resized = int(top_half_height * aspect_ratio)
-frame_resized = cv2.resize(frame, (frame_width_resized, top_half_height))
 
 # Main loop
 running = True
