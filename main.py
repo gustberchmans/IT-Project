@@ -12,11 +12,10 @@ pygame.init()
 screen_width = 500
 screen_height = 800
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Webcam and ASL + Full-Body Recognition Example")
+pygame.display.set_caption("Webcam + Full-Body Recognition")
 
 # Colors
 WHITE = (255, 255, 255)
-RED = (255, 0, 0)
 BLACK = (0, 0, 0)
 
 # Font
@@ -63,11 +62,26 @@ def recognize_asl_letter(landmarks):
         return "A"
 
     # Example letter "B": All fingers extended and close together, thumb across palm
-    if (landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP].y >
-            landmarks.landmark[mp_hands.HandLandmark.THUMB_IP].y and
-        all(landmarks.landmark[i].y < landmarks.landmark[i - 1].y
-            for i in range(mp_hands.HandLandmark.INDEX_FINGER_TIP.value, 
-                           mp_hands.HandLandmark.PINKY_TIP.value + 1))):
+    if (
+        # All four fingers should be straight (tip above PIP joint)
+        landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP].y < 
+            landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_PIP].y and
+        landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y < 
+            landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_PIP].y and
+        landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP].y < 
+            landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_PIP].y and
+        landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP].y < 
+            landmarks.landmark[mp_hands.HandLandmark.PINKY_PIP].y and
+        # All four fingers should be roughly aligned vertically
+        abs(landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP].x - 
+            landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].x) < 0.05 and
+        abs(landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].x - 
+            landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP].x) < 0.05 and
+        abs(landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP].x - 
+            landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP].x) < 0.05 and
+        # Thumb should be lower than index finger PIP, resting across palm
+        landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP].y > 
+            landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_PIP].y):
         return "B"
 
     # Example letter "C": Hand forming a "C" shape, fingers curved
