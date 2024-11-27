@@ -3,6 +3,7 @@ import flet as ft
 import base64
 import threading
 import mediapipe as mp
+import numpy as np
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -13,14 +14,26 @@ def main(page: ft.Page):
     # Create a Text widget for the loading screen
     loading_text = ft.Text("Loading camera... Please wait.", size=20)
 
-    # Add the loading screen widget to the page
-    page.add(loading_text)
-
-    # Create an Image widget to display the camera feed (initialized with no source)
-    img_widget = ft.Image(width=640, height=480)
+    # Create a temporary placeholder image (can be a blank or a colored image)
+    placeholder_image = np.zeros((480, 640, 3), dtype=np.uint8)
+    cv2.putText(placeholder_image, "Camera not available", (150, 230), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    _, placeholder_buffer = cv2.imencode('.jpg', placeholder_image)
+    placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
     
-    # Add the image widget to the page (but keep it hidden initially)
-    page.add(img_widget)
+    # Create an Image widget to display the camera feed (initialized with placeholder image)
+    img_widget = ft.Image(src_base64=placeholder_base64, width=640, height=480)
+    
+    # Use Stack to overlay the widgets and center the loading text
+    layout = ft.Stack(
+        controls=[
+            loading_text,  # Loading text placed first, on top
+            img_widget     # Camera feed placed second, below the loading text
+        ],
+        alignment=ft.alignment.center  # Center both widgets in the stack
+    )
+
+    # Add the layout to the page
+    page.add(layout)
 
     # Open the camera
     cap = cv2.VideoCapture(0)  # Camera index (0 for default)
