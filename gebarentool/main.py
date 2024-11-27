@@ -23,13 +23,18 @@ def main(page: ft.Page):
     # Create an Image widget to display the camera feed (initialized with placeholder image)
     img_widget = ft.Image(src_base64=placeholder_base64, width=640, height=480)
     
-    # Use Stack to overlay the widgets and center the loading text
-    layout = ft.Stack(
+    # Create a Text widget to show the thumbs-up detection status
+    status_text = ft.Text("", size=20)
+
+    # Use Column layout to arrange the image and status text
+    layout = ft.Column(
         controls=[
             loading_text,  # Loading text placed first, on top
-            img_widget     # Camera feed placed second, below the loading text
+            img_widget,    # Camera feed placed second, below the loading text
+            status_text    # Status text for thumbs-up detection placed below the image
         ],
-        alignment=ft.alignment.center  # Center both widgets in the stack
+        alignment=ft.alignment.center,  # Center both widgets in the column
+        spacing=10  # Add some space between the image and the text
     )
 
     # Add the layout to the page
@@ -43,6 +48,18 @@ def main(page: ft.Page):
         loading_text.value = "Error: Could not access the camera."
         page.update()
         return
+
+    # Function to check for thumbs-up gesture
+    def is_thumbs_up(hand_landmarks):
+        # Get the landmarks for the thumb
+        thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
+        thumb_ip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_IP]
+        thumb_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_MCP]
+        
+        # Check if the thumb is extended (thumb tip is higher than the base of the thumb)
+        if thumb_tip.y < thumb_ip.y < thumb_mcp.y:
+            return True
+        return False
 
     # Function to capture frames from the camera, process hand recognition, and update the Image widget
     def update_frame():
@@ -59,11 +76,18 @@ def main(page: ft.Page):
             # Process the frame with MediaPipe Hands
             results = hands.process(rgb_frame)
             
+            # Initialize thumbs-up detection status
+            thumbs_up_detected = False
+
             # Draw the hand landmarks if any hands are detected
             if results.multi_hand_landmarks:
                 for hand_landmarks in results.multi_hand_landmarks:
                     mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-            
+                    
+                    # Check if thumbs up gesture is detected
+                    if is_thumbs_up(hand_landmarks):
+                        thumbs_up_detected = True
+
             # Flip the frame horizontally to mirror the image
             frame = cv2.flip(frame, 1)  # 1 means horizontal flip (mirror effect)
 
@@ -79,6 +103,13 @@ def main(page: ft.Page):
                 loading_text.value = ""
                 page.update()
 
+            # Update the status text based on thumbs-up detection
+            if thumbs_up_detected:
+                status_text.value = "Thumbs up detected!"
+            else:
+                status_text.value = ""
+
+            # Update the page layout
             page.update()
 
     # Run the update_frame function in a separate thread to avoid blocking the main thread
