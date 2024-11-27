@@ -6,7 +6,6 @@ import mediapipe as mp
 import numpy as np
 
 from leerTool import show_page1
-from liveTranslate import show_page2
 from account import show_page3
 
 # Initialize MediaPipe Hands
@@ -36,9 +35,9 @@ def main(page: ft.Page):
         page.clean()
 
         # Create navigation buttons
-        button1 = ft.ElevatedButton("Learn", on_click=lambda e: show_page1(page, show_main_page, show_page2, show_page3))
+        button1 = ft.ElevatedButton("Learn", on_click=lambda e: show_page1(page, show_main_page, show_page3))
         button2 = ft.ElevatedButton("Translate", on_click=lambda e: show_main_page())
-        button3 = ft.ElevatedButton("Account", on_click=lambda e: show_page3(page, show_main_page, show_page1, show_page2))
+        button3 = ft.ElevatedButton("Account", on_click=lambda e: show_page3(page, show_main_page, show_page1))
 
         # Bottom row for navigation buttons
         nav_buttons = ft.Row(
