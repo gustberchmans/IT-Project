@@ -25,7 +25,7 @@ def show_page3(page, show_main_page, show_page1):
                 ft.Container(
                     content=ft.Divider(
                         thickness=2,  # Line thickness
-                        color="white",  # Line color
+                        color="black",  # Line color
                     ),
                     padding=ft.padding.only(bottom=750),  # Add padding below the divider
                 ),

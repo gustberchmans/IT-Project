@@ -14,6 +14,10 @@ hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7
 mp_drawing = mp.solutions.drawing_utils
 
 def main(page: ft.Page):
+    # Set the default theme mode to Light
+    page.theme_mode = ft.ThemeMode.LIGHT
+    page.bgcolor = "white"
+
     # Placeholder image if the camera is not accessible
     placeholder_image = np.zeros((480, 640, 3), dtype=np.uint8)
     cv2.putText(placeholder_image, "Camera not available", (150, 230), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)

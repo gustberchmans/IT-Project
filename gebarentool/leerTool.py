@@ -20,14 +20,14 @@ def show_page1(page, show_main_page, show_page3):
             controls=[
                 # Display "SMOG" with some padding
                 ft.Container(
-                    content=ft.Text(" SMOG \/", size=24),
+                    content=ft.Text(" SMOG", size=24),
                     padding=ft.padding.only(top=30),
                 ),
                 # Add a horizontal line (Divider) to span the width of the page
                 ft.Container(
                     content=ft.Divider(
                         thickness=2,  # Line thickness
-                        color="white",  # Line color
+                        color="black",  # Line color
                     ),
                     padding=ft.padding.only(bottom=750),  # Add padding below the divider
                 ),
