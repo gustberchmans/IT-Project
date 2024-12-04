@@ -7,11 +7,14 @@ import numpy as np
 
 from leerTool import show_page1
 from account import show_page3
+from login import show_login_page
+from register import show_register_page
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 mp_drawing = mp.solutions.drawing_utils
+
 
 def main(page: ft.Page):
     # Set the default theme mode to Light
@@ -93,6 +96,7 @@ def main(page: ft.Page):
             status_text.value = f"Gesture detected: {gesture_detected}"
             page.update()
 
-    show_main_page()
+    # Start with login page instead of main page
+    show_login_page(page, lambda: show_main_page(), lambda p, m, l: show_register_page(p, m, l))
 
 ft.app(target=main)
