@@ -3,63 +3,101 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+GESTURES = ['warm', 'koud', 'hallo', 'huis']
+SEQUENCES = 10
+FRAMES = 15
 
-dir = './data'
-if not os.path.exists(dir):
-    try:
-        os.makedirs(dir)
-        print(f'Directory created: {dir}')
-    except OSError as e:
-        print('Problem creating directory:', e)
-else:
-    print(f'Directory already exists: {dir}')
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands(min_detection_confidence=0.7, max_num_hands=2)
+mp_draw = mp.solutions.drawing_utils
 
+for gesture in GESTURES:
+    for sequence in range(SEQUENCES):
+        os.makedirs(os.path.join('data', gesture, str(sequence)), exist_ok=True)
 
-videoCapture = cv2.VideoCapture(0)
-if not videoCapture.isOpened():
-    print('Error: Could not access the webcam.')
-    exit()
-else:
-    print('Webcam accessed successfully.')
+cap = cv2.VideoCapture(0)
+if not cap.isOpened():
+    raise IOError("Cannot open webcam")
 
-
-
-sets = 3
-frames_per_sequence = 30
-
-
-for j in range(sets):
-    class_dir = os.path.join(dir, str(j))
-    if not os.path.exists(class_dir):
-        try:
-            os.makedirs(class_dir)
-            print(f'Directory created: {class_dir}')
-        except OSError as e:
-            print('Problem creating directory:', e)
+for gesture in GESTURES:
+    for sequence in range(SEQUENCES):
+        frame_data = []  
         
-    print('Collecting data for class {}'.format(j))
-
-    for sequence in range(frames_per_sequence):
-        frames = []
-        print(f'Collecting sequence {sequence} for class {j}')
-        
-        while len(frames) < frames_per_sequence:
-            ret, frame = videoCapture.read()
-            if not ret or frame is None:
-                print('Error: Failed to capture image')
-                break
-
-
-            cv2.putText(frame, 'Press "Q" to start recording', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-            cv2.imshow('frame', frame)
-            if cv2.waitKey(25) & 0xFF == ord('q'):
-                break
-
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                continue
+                
+            frame = cv2.flip(frame, 1)
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = hands.process(image)
             
-            frames.append(frame)
+            num_hands = len(results.multi_hand_landmarks) if results.multi_hand_landmarks else 0
+            cv2.putText(frame, f'Hands detected: {num_hands}', 
+                       (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 1)
+            
+            cv2.putText(frame, f'Ready to record {gesture} sequence {sequence}?', 
+                       (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+            cv2.putText(frame, 'Press Q when ready', (10,100), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+            
+            if results.multi_hand_landmarks:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    mp_draw.draw_landmarks(frame, hand_landmarks, 
+                                         mp_hands.HAND_CONNECTIONS)
+            
+            cv2.imshow('frame', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
-  
-        np.save(os.path.join(class_dir, f'sequence_{sequence}.npy'), np.array(frames))
+        frames_collected = 0
+        while frames_collected < FRAMES:
+            ret, frame = cap.read()
+            if not ret:
+                continue
+                
+            frame = cv2.flip(frame, 1)
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = hands.process(image)
+            
+            if results.multi_hand_landmarks:
+                landmarks = []
+                
+                for hand_landmarks in results.multi_hand_landmarks:
+                    mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                    
+                    for lm in hand_landmarks.landmark:
+                        landmarks.extend([lm.x, lm.y, lm.z])
+                
+                if len(results.multi_hand_landmarks) == 1:
+                    landmarks.extend([0] * 63)  
+                    
+                if len(landmarks) == 126:
+                    npy_path = os.path.join('data', gesture, str(sequence), str(frames_collected))
+                    np.save(npy_path, landmarks)
+                    frames_collected += 1
+                    
+                    cv2.putText(frame, f'Recording {gesture} {sequence} frame {frames_collected}/{FRAMES}', 
+                               (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+            else:
+                landmarks = [0] * 126 
+                npy_path = os.path.join('data', gesture, str(sequence), str(frames_collected))
+                np.save(npy_path, landmarks)
+                frames_collected += 1
+                
+                cv2.putText(frame, 'No hands detected', (10,50), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+            
+            cv2.imshow('frame', frame)
+            key = cv2.waitKey(100)
+            if key & 0xFF == ord('q'):
+                break
+        
+        if frames_collected < FRAMES:
+            print(f"Warning: Sequence {sequence} for {gesture} incomplete ({frames_collected}/{FRAMES} frames)")
+            
+        print(f"Completed {gesture} sequence {sequence}")
 
-videoCapture.release()
+cap.release()
 cv2.destroyAllWindows()
+print("Data collection complete")

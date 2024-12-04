@@ -11,7 +11,7 @@
 # else:
 #     print("Please install GPU version of TF")
 
-
+#.venv\Scripts\activate
 
 
 import tensorflow as tf
