@@ -3,7 +3,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-
 dir = './data'
 if not os.path.exists(dir):
     try:
@@ -14,7 +13,6 @@ if not os.path.exists(dir):
 else:
     print(f'Directory already exists: {dir}')
 
-
 videoCapture = cv2.VideoCapture(0)
 if not videoCapture.isOpened():
     print('Error: Could not access the webcam.')
@@ -22,11 +20,8 @@ if not videoCapture.isOpened():
 else:
     print('Webcam accessed successfully.')
 
-
-
 sets = 3
 frames_per_sequence = 30
-
 
 for j in range(sets):
     class_dir = os.path.join(dir, str(j))
@@ -49,15 +44,12 @@ for j in range(sets):
                 print('Error: Failed to capture image')
                 break
 
-
             cv2.putText(frame, 'Press "Q" to start recording', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
             cv2.imshow('frame', frame)
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
-
             
             frames.append(frame)
-
   
         np.save(os.path.join(class_dir, f'sequence_{sequence}.npy'), np.array(frames))
 
