@@ -43,7 +43,7 @@ def show_page1(page, show_main_page, show_page3):
                         controls=[
                             # Welcome message
                             ft.Container(
-                                content=ft.Text("Welcome to SMOG!", size=20, weight="bold", color="blue"),
+                                content=ft.Text("Welcome back!", size=40, weight="bold", color="blue"),
                                 padding=ft.padding.only(bottom=50)  # Add space below the welcome message
                             ),
                             # Stacked buttons
@@ -57,7 +57,11 @@ def show_page1(page, show_main_page, show_page3):
                                   alignment=ft.MainAxisAlignment.CENTER,
                                   spacing=10,  # Space between buttons
                               ),
-                              padding=ft.padding.only(left=40)
+                              padding=ft.padding.only(left=90)
+                            ),
+                            ft.Container(
+                                content=ft.Text("Extend your streak to 15!", size=20, weight="bold", color="blue"),
+                                padding=ft.padding.only(bottom=50, top=50, left=30)  # Add space below the welcome message
                             ),
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,  # Center the entire column
