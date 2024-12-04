@@ -4,6 +4,7 @@ import base64
 import threading
 import mediapipe as mp
 import numpy as np
+import time
 
 from leerTool import show_page1
 from account import show_page3
@@ -24,10 +25,11 @@ def main(page: ft.Page):
     _, placeholder_buffer = cv2.imencode('.jpg', placeholder_image)
     placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
 
-    # Open the camera
-    cap = cv2.VideoCapture(0)
+    # Open the IP Webcam stream
+    ip_webcam_url = "http://10.2.88.169:8080/video"  # Replace with your IP Webcam URL
+    cap = cv2.VideoCapture(ip_webcam_url)
     if not cap.isOpened():
-        print("Error: Could not access the camera.")
+        print("Error: Could not access the IP Webcam stream.")
         page.update()
         return
 
@@ -70,26 +72,55 @@ def main(page: ft.Page):
         threading.Thread(target=update_frame, daemon=True).start()
 
     def update_frame():
+        last_frame_time = time.time()
         while True:
             ret, frame = cap.read()
             if not ret:
                 print("Failed to capture image")
                 continue
+
+            # Throttle frame processing to 10 FPS to reduce overhead
+            current_time = time.time()
+            if current_time - last_frame_time < 0.1:  # 10 FPS limit
+                continue
+            last_frame_time = current_time
+
+            # Rotate the frame 180 degrees (flip upside down)
+            frame = cv2.rotate(frame, cv2.ROTATE_180)
             
+            # Flip the frame horizontally for a mirror-like effect
+            frame = cv2.flip(frame, 1)
+
+            # Convert to RGB only for gesture processing
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = hands.process(rgb_frame)
 
+            # Initialize gesture detection variable
             gesture_detected = ""
+            
+            # Detect and draw landmarks only if hands are detected
             if results.multi_hand_landmarks:
                 for hand_landmarks in results.multi_hand_landmarks:
                     mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            frame = cv2.flip(frame, 1)
-            _, buffer = cv2.imencode('.jpg', frame)
-            img_base64 = base64.b64encode(buffer).decode('utf-8')
+                    # Gesture recognition logic (Example: "Thumbs Up")
+                    thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
+                    index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
 
-            # Update the Image widget
+                    # Example for "Thumbs Up" gesture detection
+                    if thumb_tip.y < index_tip.y:
+                        gesture_detected = "Thumbs Up"
+                    
+                    # Add other gestures detection as needed
+                    # For example, "Peace" sign, "Open hand", etc.
+            
+            # Encode the frame to base64
+            _, buffer = cv2.imencode(".jpg", frame)
+            img_base64 = base64.b64encode(buffer).decode("utf-8")
+
+            # Update the Image widget with the new frame
             img_widget.src_base64 = img_base64
+            # Update the status text with the detected gesture
             status_text.value = f"Gesture detected: {gesture_detected}"
             page.update()
 
