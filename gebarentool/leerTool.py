@@ -14,48 +14,50 @@ def show_page1(page, show_main_page, show_page3):
         spacing=20
     )
 
-    # Page layout with merged SMOG text and horizontal line
+    # Page layout with SMOG text and divider in a row, followed by welcome message and buttons
     page.add(
         ft.Column(
             controls=[
                 # Row to place SMOG text and Divider next to each other
-                ft.Row(
+                ft.Column(
                     controls=[
                         ft.Container(
-                            content=ft.Text(" SMOG", size=24),
+                            content=ft.Text("SMOG", size=24),
                             alignment=ft.alignment.center_left,  # Align SMOG text to the left
-                            padding=ft.padding.only(top=30)  # Add space between the text and divider
+                            padding=ft.padding.only(top=30, left=10)  # Add space between the text and divider
                         ),
                         ft.Container(
-                          ft.Divider(
-                              thickness=2,  # Line thickness
-                              color="black",  # Line color
-                          ),
-                          padding=ft.padding.only(top=10)
+                            content=ft.Divider(  # Divider inside the content
+                                thickness=2,  # Line thickness
+                                color="black",  # Line color
+                            ),
                         ),
                     ],
                     alignment=ft.MainAxisAlignment.START,  # Align the row to the start of the page
                     spacing=10  # Space between text and divider
                 ),
-                
-                # Wrap the welcome message and buttons in a single container and center it horizontally
+
+                # Container for welcome message and buttons
                 ft.Container(
                     content=ft.Column(
                         controls=[
                             # Welcome message
                             ft.Container(
-                              ft.Text("Welcome to SMOG!", size=20, weight="bold", color="blue"),
-                              padding=ft.padding.only(bottom=10)  # Add space below the welcome message
+                                content=ft.Text("Welcome to SMOG!", size=20, weight="bold", color="blue"),
+                                padding=ft.padding.only(bottom=50)  # Add space below the welcome message
                             ),
                             # Stacked buttons
-                            ft.Column(
-                                controls=[
-                                    ft.ElevatedButton("Difficulty 1", on_click=lambda e: print("Option 1 clicked")),
-                                    ft.ElevatedButton("Difficulty 2", on_click=lambda e: print("Option 2 clicked")),
-                                    ft.ElevatedButton("Difficulty 3", on_click=lambda e: print("Option 3 clicked")),
-                                ],
-                                alignment=ft.MainAxisAlignment.CENTER,
-                                spacing=10,  # Space between buttons
+                            ft.Container(
+                              ft.Column(
+                                  controls=[
+                                      ft.ElevatedButton("Difficulty 1", on_click=lambda e: print("Option 1 clicked")),
+                                      ft.ElevatedButton("Difficulty 2", on_click=lambda e: print("Option 2 clicked")),
+                                      ft.ElevatedButton("Difficulty 3", on_click=lambda e: print("Option 3 clicked")),
+                                  ],
+                                  alignment=ft.MainAxisAlignment.CENTER,
+                                  spacing=10,  # Space between buttons
+                              ),
+                              padding=ft.padding.only(left=40)
                             ),
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,  # Center the entire column
