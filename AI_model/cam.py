@@ -13,7 +13,7 @@ hands = mp_hands.Hands(min_detection_confidence=0.75, min_tracking_confidence=0.
 mp_drawing = mp.solutions.drawing_utils
 
 
-actions = np.array(['no_gesture', 'gesture'])
+actions = np.array(['no_gesture', 'Hello'])
 
 
 sequence = deque(maxlen=10)  

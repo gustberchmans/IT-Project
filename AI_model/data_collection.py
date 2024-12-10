@@ -14,18 +14,17 @@ hands = mp_hands.Hands(min_detection_confidence=0.7, max_num_hands=2)
 mp_draw = mp.solutions.drawing_utils
 
 
-for class_name in CLASSES:
-    for sequence in range(HERHALINGEN):
-        os.makedirs(os.path.join('data', class_name, str(sequence)), exist_ok=True)
-
-
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     raise IOError("Cannot open webcam")
 
 
 for class_name in CLASSES:
-    for sequence in range(HERHALINGEN):
+    class_dir = os.path.join('data', class_name)
+    existing_sequences = len(os.listdir(class_dir))
+    
+    for sequence in range(existing_sequences, existing_sequences + HERHALINGEN):
+        os.makedirs(os.path.join(class_dir, str(sequence)), exist_ok=True)
         print(f"\nCollecting {class_name} sequence {sequence}")
         
         
@@ -80,8 +79,7 @@ for class_name in CLASSES:
                         landmarks.extend([lm.x, lm.y, lm.z])
             
             
-            if (class_name == 'gesture' and len(landmarks) > 0) or \
-              (class_name == 'no_gesture' and len(landmarks) > 0):
+            if (class_name == 'gesture' and len(landmarks) > 0) or (class_name == 'no_gesture' and len(landmarks) > 0):
                 npy_path = os.path.join('data', class_name, str(sequence), str(frames_collected))
                 np.save(npy_path, landmarks if landmarks else np.zeros(63))
                 frames_collected += 1
