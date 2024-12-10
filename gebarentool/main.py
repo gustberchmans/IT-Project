@@ -29,12 +29,12 @@ def main(page: ft.Page):
     placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
 
     # Open the IP Webcam stream
-    ip_webcam_url = "http://10.2.88.169:8080/video"  # Replace with your IP Webcam URL
-    cap = cv2.VideoCapture(ip_webcam_url)
-    if not cap.isOpened():
-        print("Error: Could not access the IP Webcam stream.")
-        page.update()
-        return
+    #ip_webcam_url = "http://10.2.88.169:8080/video"  # Replace with your IP Webcam URL
+    #cap = cv2.VideoCapture(ip_webcam_url)
+    #if not cap.isOpened():
+        #print("Error: Could not access the IP Webcam stream.")
+        #page.update()
+        #return
 
     # Create the Image widget globally to make it accessible across functions
     img_widget = ft.Image(src_base64=placeholder_base64, width=640, height=480)
