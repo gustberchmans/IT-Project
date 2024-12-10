@@ -1,7 +1,7 @@
 import flet as ft
 
 
-from account import show_page3
+from account import account
 
 
 

@@ -4,7 +4,7 @@ from utils import show_success_snackbar, show_error_snackbar
 from register import show_register_page
 from login import show_login_page
 
-def show_page3(page, show_main_page, show_page1):
+def account(page, show_main_page, leerTool, account):
     page.clean()
     page.window_width = 400
     page.window_height = 800
@@ -65,9 +65,9 @@ def show_page3(page, show_main_page, show_page1):
     # Navigation Bar
     nav_bar = ft.Row(
         controls=[
-            ft.ElevatedButton("Learn", on_click=lambda e: show_page1(page, show_main_page, show_page3)),
+            ft.ElevatedButton("Learn", on_click=lambda e: leerTool(page, show_main_page, account, leerTool)),
             ft.ElevatedButton("Translate", on_click=lambda e: show_main_page()),
-            ft.ElevatedButton("Account", on_click=lambda e: show_page3(page, show_main_page, show_page1)),
+            ft.ElevatedButton("Account", on_click=lambda e: None),
         ],
         alignment=ft.MainAxisAlignment.CENTER,
         spacing=20

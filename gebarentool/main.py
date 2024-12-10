@@ -6,8 +6,8 @@ import mediapipe as mp
 import numpy as np
 import time
 
-from leerTool import show_page1
-from account import show_page3
+from leerTool import leerTool
+from account import account
 from login import show_login_page
 from register import show_register_page
 
@@ -76,9 +76,9 @@ def main(page: ft.Page):
             return
 
         # Create navigation buttons
-        button1 = ft.ElevatedButton("Learn", on_click=lambda e: switch_to_page(show_page1))
-        button2 = ft.ElevatedButton("Translate", on_click=lambda e: show_main_page())
-        button3 = ft.ElevatedButton("Account", on_click=lambda e: switch_to_page(show_page3))
+        button1 = ft.ElevatedButton("Learn", on_click=lambda e: switch_to_page(leerTool))
+        button2 = ft.ElevatedButton("Translate", on_click=lambda e: None)
+        button3 = ft.ElevatedButton("Account", on_click=lambda e: switch_to_page(account))
 
         # Bottom row for navigation buttons
         nav_buttons = ft.Row(
@@ -110,7 +110,7 @@ def main(page: ft.Page):
     def switch_to_page(target_page):
         stop_update_thread()
         close_camera()
-        target_page(page, show_main_page, show_register_page)
+        target_page(page, show_main_page, leerTool, account)
 
     def update_frame():
         global update_thread_running
