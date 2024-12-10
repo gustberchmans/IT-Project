@@ -19,8 +19,8 @@ quiz_data = [
 ]
 
 # Functie voor de quizpagina
-def show_dif1_page(page, show_main_page, show_page3):
-    from leerTool import show_page1
+def show_dif1_page(page, show_main_page, account, leerTool):
+    from leerTool import leerTool
     
     
     page.clean()
@@ -83,7 +83,7 @@ def show_dif1_page(page, show_main_page, show_page3):
             ft.Column(
                 controls=[
                     ft.Text(f"Quiz completed! Your score: {score}/{len(quiz_data)}", size=24),
-                    ft.ElevatedButton("Back to Difficulty Selection", on_click=lambda e: show_page1(page, show_main_page, show_page3)),
+                    ft.ElevatedButton("Back to Difficulty Selection", on_click=lambda e: leerTool(page, show_main_page, account, leerTool)),
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
                 expand=True,
