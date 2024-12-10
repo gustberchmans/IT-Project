@@ -9,16 +9,21 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from tensorflow.python.keras.utils.np_utils import to_categorical
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, accuracy_score
+import seaborn as sns
+
 
 dir = './data'
-
 if not os.path.exists(os.path.join(dir, 'data.npy')) or not os.path.exists(os.path.join(dir, 'labels.npy')):
     raise FileNotFoundError(f"Data files not found in {dir}")
+
 
 data = np.load(os.path.join(dir, 'data.npy'))
 labels = np.load(os.path.join(dir, 'labels.npy'))
 
 print(f"Initial data shape: {data.shape}")
+
 
 scaler = StandardScaler()
 samples, timesteps, features = data.shape
@@ -26,113 +31,49 @@ data_reshaped = data.reshape(samples, -1)
 data_normalized = scaler.fit_transform(data_reshaped)
 data = data_normalized.reshape(samples, timesteps, features)
 
+
 label_encoder = LabelEncoder()
 labels = label_encoder.fit_transform(labels)
-labels = tf.keras.utils.to_categorical(labels)
+labels = to_categorical(labels)
 print(f"Labels shape: {labels.shape}")
 
 
-X_train_val, X_test, y_train_val, y_test = train_test_split(
-    data, labels, test_size=0.2, random_state=42, stratify=labels
-)
-
-X_train, X_val, y_train, y_val = train_test_split(
-    X_train_val, y_train_val, test_size=0.2, random_state=42, stratify=y_train_val
+X_train, X_test, y_train, y_test = train_test_split(
+    data, labels, test_size=0.1, random_state=34, stratify=labels.argmax(axis=1)
 )
 
 print(f"Train set: {X_train.shape[0]} samples")
-print(f"Validation set: {X_val.shape[0]} samples")
 print(f"Test set: {X_test.shape[0]} samples")
 
 
 model = Sequential([
-    LSTMV1(128, return_sequences=True, 
-         input_shape=(timesteps, features),
-         kernel_regularizer=l2(0.01)),
+    LSTMV1(32, return_sequences=True, activation='relu', input_shape=(timesteps, features)),
+    LSTMV1(64, return_sequences=True, activation='relu'),
+    LSTMV1(32, return_sequences=False, activation='relu'),
+    Dense(32, activation='relu'),
     Dropout(0.3),
-    
-    LSTMV1(64, return_sequences=True,
-         kernel_regularizer=l2(0.01)),
-    Dropout(0.3),
-    
-    LSTMV1(32, kernel_regularizer=l2(0.01)),
-    Dropout(0.3),
-    
-    Dense(32, activation='relu',
-          kernel_regularizer=l2(0.01)),
-    Dropout(0.3),
-    
     Dense(labels.shape[1], activation='softmax')
 ])
 
 
-optimizer = Adam(learning_rate=0.0005)
-model.compile(
-    optimizer=optimizer,
-    loss='categorical_crossentropy',
-    metrics=['accuracy', 'Precision', 'Recall']
-)
+model.compile(optimizer=Adam(learning_rate=0.0005), loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
 
-early_stopping = EarlyStopping(
-    monitor='val_loss',
-    patience=5,
-    restore_best_weights=True
-)
-
-checkpoint = ModelCheckpoint(
-    'best_model.h5',
-    monitor='val_loss',
-    save_best_only=True
-)
+history = model.fit(X_train, y_train, epochs=50, validation_split=0.2, batch_size=16)
 
 
 model_dir = './models'
-os.makedirs(model_dir, exist_ok=True)
+model_path = os.path.join(model_dir, 'my_model.h5')
+print("Model saved successfully")
 
 
-history = model.fit(
-    X_train, y_train,
-    validation_data=(X_val, y_val),
-    epochs=50,
-    batch_size=16,
-    callbacks=[early_stopping, checkpoint]
-)
+predictions = np.argmax(model.predict(X_test), axis=1)
+test_labels = np.argmax(y_test, axis=1)
 
 
-best_model_path = os.path.join(model_dir, 'best_model.h5')
-final_model_path = os.path.join(model_dir, 'final_model.h5')
+accuracy = accuracy_score(test_labels, predictions)
+print(f"Test Accuracy: {accuracy:.2f}")
 
-try:
-    
-    model.save(final_model_path)
-    print(f"Final model saved to: {final_model_path}")
-    
-    
-    if os.path.exists(best_model_path):
-        best_model = tf.keras.models.load_model(best_model_path)
-        print(f"Best model loaded from: {best_model_path}")
-    else:
-        print("No best model checkpoint found, using final model")
-        best_model = model
-    
-    
-    val_metrics = best_model.evaluate(X_val, y_val)
-    test_metrics = best_model.evaluate(X_test, y_test)
-    
-    print("\nValidation Results:")
-    print(f"Loss: {val_metrics[0]:.4f}")
-    print(f"Accuracy: {val_metrics[1]:.4f}")
-    
-    print("\nTest Results:")
-    print(f"Loss: {test_metrics[0]:.4f}")
-    print(f"Accuracy: {test_metrics[1]:.4f}")
-    
-except Exception as e:
-    print(f"Error saving/loading model: {str(e)}")
-
-
-import matplotlib.pyplot as plt
 
 plt.figure(figsize=(15, 5))
 
@@ -147,23 +88,18 @@ plt.legend()
 
 
 plt.subplot(1, 3, 2)
-plt.plot(history.history['accuracy'], label='Training Accuracy')
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.plot(history.history['categorical_accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_categorical_accuracy'], label='Validation Accuracy')
 plt.title('Model Accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.legend()
 
 
-from sklearn.metrics import confusion_matrix
-import seaborn as sns
-
 plt.subplot(1, 3, 3)
-y_pred = np.argmax(best_model.predict(X_val), axis=1)
-y_true = np.argmax(y_val, axis=1)
-cm = confusion_matrix(y_true, y_pred)
+cm = confusion_matrix(test_labels, predictions)
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-plt.title('Confusion Matrix\n(Validation Set)')
+plt.title('Confusion Matrix (Test Set)')
 plt.xlabel('Predicted')
 plt.ylabel('True')
 
