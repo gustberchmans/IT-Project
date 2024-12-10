@@ -66,7 +66,7 @@ while cap.isOpened():
                     color = (0, 0, 255)  
 
                 cv2.putText(frame, f'{label}: {confidence:.2f}', (10, 30),
-                           cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv2.LINE_AA)
+                          cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv2.LINE_AA)
 
         except Exception as e:
             print(f"Error: {str(e)}")
@@ -74,7 +74,7 @@ while cap.isOpened():
     else:
         
         cv2.putText(frame, 'No Gesture', (10, 30),
-                   cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                  cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
     cv2.imshow('Gesture Recognition', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):

@@ -8,7 +8,6 @@ data = np.load(os.path.join(dir, 'data.npy'))
 labels = np.load(os.path.join(dir, 'labels.npy'))
 
 try:
-    
     samples, frames, features = data.shape
     data_reshaped = data.reshape(samples, frames * features)
     

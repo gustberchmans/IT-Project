@@ -45,11 +45,11 @@ for class_name in CLASSES:
                 instruction = "Keep hands out of frame"
                 
             cv2.putText(frame, f"Class: {class_name} - Sequence {sequence}", 
-                       (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+                      (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
             cv2.putText(frame, instruction, 
-                       (10,70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+                      (10,70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
             cv2.putText(frame, 'Press Q when ready', 
-                       (10,110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+                      (10,110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
             
             
             if results.multi_hand_landmarks:
@@ -81,13 +81,13 @@ for class_name in CLASSES:
             
             
             if (class_name == 'gesture' and len(landmarks) > 0) or \
-               (class_name == 'no_gesture' and len(landmarks) > 0):
+              (class_name == 'no_gesture' and len(landmarks) > 0):
                 npy_path = os.path.join('data', class_name, str(sequence), str(frames_collected))
                 np.save(npy_path, landmarks if landmarks else np.zeros(63))
                 frames_collected += 1
                 
                 cv2.putText(frame, f'Recording frame {frames_collected}/{FRAMES}', 
-                           (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+                          (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
             
             cv2.imshow('frame', frame)
             cv2.waitKey(100)
