@@ -113,79 +113,62 @@ def main(page: ft.Page):
         target_page(page, show_main_page, show_register_page)
 
     def update_frame():
-      global update_thread_running, cap
-      last_frame_time = time.time()
-
-      while update_thread_running:
-          # Check if the camera is initialized and open
-          if not cap or not cap.isOpened():
-              print("Camera feed not available")
-              time.sleep(0.1)  # Avoid busy-waiting
-              continue
-
-          try:
-              ret, frame = cap.read()
-              if not ret:
-                  print("Failed to capture image")
-                  continue
-
-              # Throttle frame processing to 10 FPS to reduce overhead
-              current_time = time.time()
-              if current_time - last_frame_time < 0.1:  # 10 FPS limit
-                  continue
-              last_frame_time = current_time
-
-              # Rotate the frame 180 degrees (flip upside down)
-              frame = cv2.rotate(frame, cv2.ROTATE_180)
-              
-              # Flip the frame horizontally for a mirror-like effect
-              frame = cv2.flip(frame, 1)
-
-              # Convert to RGB only for gesture processing
-              rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-              results = hands.process(rgb_frame)
-
-              # Initialize gesture detection variable
-              gesture_detected = ""
-              
-              # Detect and draw landmarks only if hands are detected
-              if results.multi_hand_landmarks:
-                  for hand_landmarks in results.multi_hand_landmarks:
-                      mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-
-                      # Gesture recognition logic (Example: "Thumbs Up")
-                      thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
-                      index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-
-                      # Example for "Thumbs Up" gesture detection
-                      if thumb_tip.y < index_tip.y:
-                          gesture_detected = "Thumbs Up"
-                      
-                      # Add other gestures detection as needed
-              
-              # Encode the frame to base64
-              _, buffer = cv2.imencode(".jpg", frame)
-              img_base64 = base64.b64encode(buffer).decode("utf-8")
-
-              # Update the Image widget with the new frame
-              img_widget.src_base64 = img_base64
-              # Update the status text with the detected gesture
-              status_text.value = f"Gesture detected: {gesture_detected}"
-              page.update()
-          except Exception as e:
-              print(f"Error during frame update: {e}")
-              break
-
-    def stop_update_thread():
         global update_thread_running
-        update_thread_running = False
-        time.sleep(0.2)  # Give the thread time to terminate
+        last_frame_time = time.time()
 
-    def switch_to_page(target_page):
-        global cap
-        stop_update_thread()
-        close_camera()
-        target_page(page, show_main_page, show_register_page)
+        while update_thread_running:
+            if not cap or not cap.isOpened():
+                print("Camera feed not available")
+                continue
+
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to capture image")
+                continue
+
+            # Throttle frame processing to 10 FPS to reduce overhead
+            current_time = time.time()
+            if current_time - last_frame_time < 0.05:  # 10 FPS limit
+                continue
+            last_frame_time = current_time
+
+            # Rotate the frame 180 degrees (flip upside down)
+            frame = cv2.rotate(frame, cv2.ROTATE_180)
+            
+            # Flip the frame horizontally for a mirror-like effect
+            frame = cv2.flip(frame, 1)
+
+            # Convert to RGB only for gesture processing
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = hands.process(rgb_frame)
+
+            # Initialize gesture detection variable
+            gesture_detected = ""
+            
+            # Detect and draw landmarks only if hands are detected
+            if results.multi_hand_landmarks:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+
+                    # Gesture recognition logic (Example: "Thumbs Up")
+                    thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
+                    index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+
+                    # Example for "Thumbs Up" gesture detection
+                    if thumb_tip.y < index_tip.y:
+                        gesture_detected = "Thumbs Up"
+                    
+                    # Add other gestures detection as needed
+            
+            # Encode the frame to base64
+            _, buffer = cv2.imencode(".jpg", frame)
+            img_base64 = base64.b64encode(buffer).decode("utf-8")
+
+            # Update the Image widget with the new frame
+            img_widget.src_base64 = img_base64
+            # Update the status text with the detected gesture
+            status_text.value = f"Gesture detected: {gesture_detected}"
+            page.update()
 
     # Start with login page instead of main page
     show_login_page(page, lambda: show_main_page(), lambda p, m, l: show_register_page(p, m, l))
