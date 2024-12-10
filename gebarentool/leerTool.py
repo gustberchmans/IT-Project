@@ -1,15 +1,15 @@
 import flet as ft
 from dif1 import show_dif1_page
 
-def show_page1(page, show_main_page, show_page3):
+def leerTool(page, show_main_page, leerTool, account):
     page.clean()
 
     # Navigation bar`   `
     nav_bar = ft.Row(
         controls=[
-            ft.ElevatedButton("Learn", on_click=lambda e: show_page1(page, show_main_page, show_page3)),
+            ft.ElevatedButton("Learn", on_click=lambda e: None),
             ft.ElevatedButton("Translate", on_click=lambda e: show_main_page()),
-            ft.ElevatedButton("Account", on_click=lambda e: show_page3(page, show_main_page, show_page1)),
+            ft.ElevatedButton("Account", on_click=lambda e: account(page, show_main_page, account, leerTool)),
         ],
         alignment=ft.MainAxisAlignment.CENTER,
         spacing=20
