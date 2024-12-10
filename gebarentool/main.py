@@ -16,7 +16,6 @@ mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 mp_drawing = mp.solutions.drawing_utils
 
-
 def main(page: ft.Page):
     # Set the default theme mode to Light
     page.theme_mode = ft.ThemeMode.LIGHT
@@ -29,7 +28,7 @@ def main(page: ft.Page):
     placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
 
     # Open the IP Webcam stream
-    ip_webcam_url = "http://10.2.88.169:8080/video"  # Replace with your IP Webcam URL
+    ip_webcam_url = "http://10.2.88.78:8080/video"  # Replace with your IP Webcam URL
     cap = cv2.VideoCapture(ip_webcam_url)
     if not cap.isOpened():
         print("Error: Could not access the IP Webcam stream.")
