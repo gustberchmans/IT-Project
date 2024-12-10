@@ -34,7 +34,7 @@ def main(page: ft.Page):
     placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
 
     # Create the Image widget globally to make it accessible across functions
-    img_widget = ft.Image(src_base64=placeholder_base64, width=640, height=480)
+    #img_widget = ft.Image(src_base64=placeholder_base64, width=640, height=480)
     status_text = ft.Text("", size=20)
 
     # Function to initialize the camera

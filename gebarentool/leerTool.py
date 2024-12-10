@@ -1,9 +1,10 @@
 import flet as ft
+from dif1 import show_dif1_page
 
 def show_page1(page, show_main_page, show_page3):
     page.clean()
 
-    # Navigation bar
+    # Navigation bar`   `
     nav_bar = ft.Row(
         controls=[
             ft.ElevatedButton("Learn", on_click=lambda e: show_page1(page, show_main_page, show_page3)),
@@ -50,7 +51,7 @@ def show_page1(page, show_main_page, show_page3):
                             ft.Container(
                               ft.Column(
                                   controls=[
-                                      ft.ElevatedButton("Difficulty 1", on_click=lambda e: print("Option 1 clicked")),
+                                      ft.ElevatedButton("Difficulty 1", on_click=lambda e: show_dif1_page(page)),
                                       ft.ElevatedButton("Difficulty 2", on_click=lambda e: print("Option 2 clicked")),
                                       ft.ElevatedButton("Difficulty 3", on_click=lambda e: print("Option 3 clicked")),
                                   ],
