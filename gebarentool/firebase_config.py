@@ -1,9 +1,15 @@
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from functools import lru_cache
+import os
+
+# Get the directory containing the current file
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Create absolute path to serviceAccountKey.json
+service_account_path = os.path.join(current_dir, "serviceAccountKey.json")
 
 # Initialize Firebase Admin with your service account credentials
-cred = credentials.Certificate("gebarentool/serviceAccountKey.json")
+cred = credentials.Certificate(service_account_path)
 firebase_admin.initialize_app(cred)
 
 # Initialize Firestore with caching

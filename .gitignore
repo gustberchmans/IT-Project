@@ -162,3 +162,6 @@ cython_debug/
 # Firebase
 serviceAccountKey.json
 **/serviceAccountKey.json
+
+# Node.js dependencies
+package-lock.json
