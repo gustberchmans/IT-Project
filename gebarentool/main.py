@@ -41,7 +41,7 @@ def main(page: ft.Page):
     def open_camera():
         global cap
         ip_webcam_url = "http://10.2.88.78:8080/video"  # Replace with your IP Webcam URL
-        cap = cv2.VideoCapture(ip_webcam_url)
+        cap = cv2.VideoCapture(0)
         if not cap.isOpened():
             print("Error: Could not access the IP Webcam stream.")
             return False

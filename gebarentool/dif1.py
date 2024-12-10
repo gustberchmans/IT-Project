@@ -6,15 +6,23 @@ from account import show_page3
 
 
 
+
+
 # Voorbeeld van quizvragen
 quiz_data = [
     {"question": "What is 2 + 2?", "options": ["3", "4", "5", "6"], "answer": "4"},
     {"question": "What is the capital of France?", "options": ["Berlin", "Paris", "Rome", "Madrid"], "answer": "Paris"},
-    {"question": "What is 5 * 3?", "options": ["15", "10", "20", "25"], "answer": "15"}
+    {"question": "What is 5 * 3?", "options": ["15", "10", "20", "25"], "answer": "15"},
+    {"question": "What is the largest planet in our solar system?", "options": ["Earth", "Mars", "Jupiter", "Saturn"], "answer": "Jupiter"},
+    {"question": "What is the powerhouse of the cell?", "options": ["Nucleus", "Mitochondria", "Ribosome", "Golgi Apparatus"], "answer": "Mitochondria"},
+    
 ]
 
 # Functie voor de quizpagina
-def show_dif1_page(page):
+def show_dif1_page(page, show_main_page, show_page3):
+    from leerTool import show_page1
+    
+    
     page.clean()
 
     # Variabelen voor voortgang en score
@@ -29,6 +37,7 @@ def show_dif1_page(page):
             question = question_data["question"]
             options = question_data["options"]
             answer = question_data["answer"]
+            
             display_question(question, options, answer)
         else:
             display_results()
@@ -44,9 +53,12 @@ def show_dif1_page(page):
             else:
                 result_text.value = "Wrong! 😞"
                 result_text.color = "red"
+                
+            
             quiz_index += 1
             page.update()
             load_question()
+        progress_bar.value = (quiz_index / len(quiz_data))
 
         # Stel de vraag en opties in
         question_text.value = question
@@ -71,7 +83,7 @@ def show_dif1_page(page):
             ft.Column(
                 controls=[
                     ft.Text(f"Quiz completed! Your score: {score}/{len(quiz_data)}", size=24),
-                    ft.ElevatedButton("Back to Difficulty Selection", on_click=lambda e: show_page1(page, show_main_page)),
+                    ft.ElevatedButton("Back to Difficulty Selection", on_click=lambda e: show_page1(page, show_main_page, show_page3)),
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
                 expand=True,
@@ -79,6 +91,7 @@ def show_dif1_page(page):
         )
 
     # UI-elementen voor de quiz
+    progress_bar = ft.ProgressBar(width=200)
     question_text = ft.Text(size=20, weight="bold")
     options_container = ft.Column(spacing=10)
     result_text = ft.Text(size=16)
@@ -87,12 +100,18 @@ def show_dif1_page(page):
     page.add(
         ft.Column(
             controls=[
+                
                 # Placeholder voor de camera
                 ft.Container(
                     content=ft.Text("Camera feed here (placeholder)", size=18, color="gray"),
                     height=300,  # Gebruik de bovenste helft van het scherm
                     alignment=ft.alignment.center,
                     bgcolor="lightblue"
+                ),
+                ft.Container(
+                    content=progress_bar,
+                    padding=ft.padding.symmetric(vertical=10),  # Voeg wat ruimte toe
+                    alignment=ft.alignment.center,
                 ),
                 ft.Container(
                     content=ft.Column(
@@ -108,6 +127,7 @@ def show_dif1_page(page):
                     padding=ft.padding.all(20),
                     bgcolor="white",
                 )
+                
             ],
             expand=True,
         )
@@ -115,4 +135,3 @@ def show_dif1_page(page):
 
     # Start de quiz
     load_question()
-

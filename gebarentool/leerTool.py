@@ -51,7 +51,7 @@ def show_page1(page, show_main_page, show_page3):
                             ft.Container(
                               ft.Column(
                                   controls=[
-                                      ft.ElevatedButton("Difficulty 1", on_click=lambda e: show_dif1_page(page)),
+                                      ft.ElevatedButton("Difficulty 1", on_click=lambda e: show_dif1_page(page, show_main_page, show_page3)),
                                       ft.ElevatedButton("Difficulty 2", on_click=lambda e: print("Option 2 clicked")),
                                       ft.ElevatedButton("Difficulty 3", on_click=lambda e: print("Option 3 clicked")),
                                   ],
