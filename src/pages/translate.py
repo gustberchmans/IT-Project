@@ -16,6 +16,9 @@ mp_drawing = mp.solutions.drawing_utils
 cap = None
 update_thread_running = False
 
+# IP Webcam URL
+ip_webcam_url = "http://10.2.88.156:8080/video"  # Default IP Webcam URL, replace as needed
+
 def show_translate_page(page: ft.Page, router):
     global cap, update_thread_running
 
@@ -32,9 +35,19 @@ def show_translate_page(page: ft.Page, router):
     # Function to initialize the camera
     def open_camera():
         global cap
-        cap = cv2.VideoCapture(0)
+        global ip_webcam_url
+
+        # Attempt to open IP webcam first
+        if ip_webcam_url:
+            cap = cv2.VideoCapture(ip_webcam_url)
+        
+        # Fallback to hardware webcam if IP webcam fails
+        if not cap or not cap.isOpened():
+            print("Failed to access IP Webcam. Trying hardware webcam...")
+            cap = cv2.VideoCapture(0)
+
         if not cap.isOpened():
-            print("Error: Could not access the camera.")
+            print("Error: Could not access any camera.")
             return False
         return True
 
@@ -126,6 +139,9 @@ def show_translate_page(page: ft.Page, router):
         expand=True
     )
 
+    # Start the frame update thread
+    start_update_thread()
+
     # Return the View object
     return ft.View(
         route="/translate",
@@ -133,6 +149,3 @@ def show_translate_page(page: ft.Page, router):
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
-
-    # Start the frame update thread
-    start_update_thread()
