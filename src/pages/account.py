@@ -1,10 +1,9 @@
 import flet as ft
-from services.firebase import get_current_user, get_user_data, logout
+from services.firebase import get_current_user, get_user_data, logout, db
 from utils.helpers import show_success_snackbar, show_error_snackbar
 from components.nav_bar import NavBar
 
 def show_account_page(page: ft.Page, router):
-    
     user_id = get_current_user()
     user_data = get_user_data(user_id)
 
@@ -18,39 +17,92 @@ def show_account_page(page: ft.Page, router):
         show_success_snackbar(page, "Logged out successfully!")
         router.navigate("/login")
 
+    def handle_back(e):
+        router.navigate_back()
+
+    def handle_save_profile(e):
+        try:
+            # Get the updated values from text fields
+            new_name = name_field.value.split()
+            if len(new_name) != 2:
+                show_error_snackbar(page, "Please enter both first and last name.")
+                return
+                
+            new_firstname, new_lastname = new_name
+            new_email = email_field.value
+            new_password = password_field.value.replace('•', '') if not password_field.password else password_field.value
+
+            # Update the database
+            db.collection('Users').document(user_id).update({
+                'firstname': new_firstname,
+                'lastname': new_lastname,
+                'email': new_email,
+                'password': new_password
+            })
+
+            # Update the user data in memory
+            user_data.update({
+                'firstname': new_firstname,
+                'lastname': new_lastname,
+                'email': new_email,
+                'password': new_password
+            })
+
+            show_success_snackbar(page, "Profile updated successfully!")
+        except Exception as e:
+            show_error_snackbar(page, f"Error updating profile: {str(e)}")
+
+    back_button = ft.IconButton(
+        icon=ft.icons.ARROW_CIRCLE_LEFT_OUTLINED,
+        icon_size=40,
+        icon_color=ft.colors.GREY_900,
+        on_click=handle_back,
+        alignment=ft.alignment.top_right
+    )
+
+    name_field = ft.TextField(
+        value=f"{user_data['firstname']} {user_data['lastname']}", 
+        prefix_icon=ft.icons.PERSON,
+        label="Full Name"
+    )
+
+    email_field = ft.TextField(
+        value=user_data['email'],
+        prefix_icon=ft.icons.EMAIL,
+        label="Email"
+    )
+
+    password_field = ft.TextField(
+        value=user_data['password'],
+        prefix_icon=ft.icons.LOCK,
+        password=True,
+        can_reveal_password=True,
+        label="Password"
+    )
+
     profile_section = ft.Container(
         content=ft.Column([
-            ft.Container(
-                content=ft.CircleAvatar(
-                    content=ft.Text(user_data['firstname'][0].upper()),
-                    radius=50,
-                    bgcolor=ft.colors.BLUE_200,
+            back_button,
+            ft.Text(f"{user_data['firstname']} {user_data['lastname']}", size=24, weight=ft.FontWeight.BOLD),
+            ft.Icon(ft.icons.PERSON_PIN, size=80),
+            name_field,
+            email_field,
+            password_field,
+            ft.ElevatedButton(
+                "Save profile",
+                on_click=handle_save_profile,
+                style=ft.ButtonStyle(
+                    color=ft.colors.WHITE,
+                    bgcolor=ft.colors.BLUE,
+                    shape=ft.RoundedRectangleBorder(radius=10),
                 ),
-                alignment=ft.alignment.center,
             ),
-            ft.Text(
-                f"{user_data['firstname']} {user_data['lastname']}", 
-                size=24, 
-                weight=ft.FontWeight.BOLD,
-                text_align=ft.TextAlign.CENTER
-            ),
-            ft.Text(
-                user_data['email'], 
-                size=16, 
-                color=ft.colors.GREY_700,
-                text_align=ft.TextAlign.CENTER
-            ),
-            ft.Container(
-                content=ft.ElevatedButton(
-                    "Logout",
-                    icon=ft.icons.LOGOUT,
-                    on_click=handle_logout,
-                    style=ft.ButtonStyle(
-                        color=ft.colors.WHITE,
-                        bgcolor="red",
-                    ),
-                ),
-                margin=ft.margin.only(top=20),
+            ft.ElevatedButton(
+                "Logout",
+                icon=ft.icons.LOGOUT,
+                on_click=handle_logout,
+                bgcolor="red",
+                color=ft.colors.WHITE
             ),
         ]),
         padding=20,
@@ -63,5 +115,6 @@ def show_account_page(page: ft.Page, router):
         route="/account",
         controls=[profile_section, nav_bar],
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        padding=0
     )

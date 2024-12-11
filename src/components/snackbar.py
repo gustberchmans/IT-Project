@@ -9,11 +9,15 @@ class Snackbar(ft.UserControl):
         self.action_callback = action_callback
 
     def build(self):
-        return ft.Snackbar(
-            content=ft.Text(self.message),
-            duration=self.duration,
-            action=self.action,
-            on_action=self.action_callback
+        return ft.Container(
+            content=ft.Snackbar(
+                content=ft.Text(self.message),
+                duration=self.duration,
+                action=self.action,
+                on_action=self.action_callback
+            ),
+            alignment=ft.alignment.top_center,
+            padding=ft.padding.only(top=10)
         )
 
 def show_snackbar(page: ft.Page, message: str, duration: int = 3000, action: str = None, action_callback=None):

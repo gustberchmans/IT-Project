@@ -47,6 +47,13 @@ class Router:
         self.page.views.append(view)
         self.page.update()
 
+    def navigate_back(self):
+        if self.history:
+            previous_route = self.history.pop()
+            self.navigate(previous_route)
+        else:
+            print("No previous route to navigate back to.")
+
     def match_route(self, route: str):
         for path in self.routes:
             pattern = re.sub(r'{\w+}', r'([^/]+)', path)

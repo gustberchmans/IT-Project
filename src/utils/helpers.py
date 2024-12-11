@@ -32,7 +32,7 @@ def show_snackbar(page, message: str, color: str = "green"):
         bgcolor=color,
         behavior=ft.SnackBarBehavior.FLOATING,
         margin=ft.margin.only(top=20, left=20, right=20),
-        duration=3000,
+        duration=1500
     )
     page.snack_bar.open = True
     page.update()
