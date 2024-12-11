@@ -4,6 +4,7 @@ import threading
 import numpy as np
 import base64
 import mediapipe as mp
+from components.header import HeaderBar
 from components.nav_bar import NavBar
 import time
 import requests
@@ -33,8 +34,98 @@ def show_translate_page(page: ft.Page, router):
     placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
 
     # Create the Image widget globally to make it accessible across functions
-    img_widget = ft.Image(src_base64=placeholder_base64, width=640, height=480)
+    img_widget = ft.Image(
+        src_base64=placeholder_base64, 
+        width=400,
+        height=400,
+        fit=ft.ImageFit.COVER,
+        border_radius=8,
+    )
+
+    # At the start of show_translate_page, create a Text control for the message
+    message_text = ft.Text("", size=14, color=ft.colors.BLACK)
+    
+    # Create the AI message container with the dynamic text
+    ai_message = ft.Container(
+        content=message_text,
+        bgcolor=ft.colors.BLUE_50,
+        border_radius=10,
+        padding=ft.padding.all(15),
+        margin=ft.margin.only(left=20, right=80),
+        visible=False,  # Hide initially until there's a message
+    )
+
+    # Grey camera preview area
+    camera_section = ft.Container(
+        content=img_widget,
+        width=400,
+        height=400,
+        border_radius=8,
+        bgcolor=ft.colors.GREY_200,
+        alignment=ft.alignment.center,
+        margin=ft.margin.symmetric(vertical=20),
+    )
+
+    # Status text for gesture detection
     status_text = ft.Text("", size=20)
+
+    # Bottom input bar with camera button
+    input_section = ft.Container(
+        content=ft.Row(
+            controls=[
+                ft.Container(
+                    content=ft.TextField(
+                        hint_text="Type",
+                        border=ft.InputBorder.NONE,
+                        cursor_color=ft.colors.BLACK,
+                        text_style=ft.TextStyle(
+                            color=ft.colors.BLACK,
+                        ),
+                    ),
+                    bgcolor=ft.colors.GREY_200,
+                    border_radius=25,
+                    padding=ft.padding.only(left=20, right=20),
+                    expand=True,
+                ),
+                ft.Container(
+                    content=ft.IconButton(
+                        icon=ft.icons.CAMERA_ALT_ROUNDED,
+                        icon_color=ft.colors.BLACK54,
+                    ),
+                    bgcolor=ft.colors.GREY_200,
+                    border_radius=25,
+                ),
+            ],
+            spacing=10,
+        ),
+        padding=ft.padding.symmetric(horizontal=20),
+        margin=ft.margin.only(bottom=20),
+    )
+
+    # Create navigation bar
+    nav_bar = NavBar(router=router, active_route="/translate")
+
+    # Page configuration
+    page.clean()
+    page.bgcolor = ft.colors.WHITE
+    page.padding = 0
+    page.window_width = 400
+    page.window_height = 800
+
+    # Main layout
+    content = ft.Column(
+        controls=[
+            HeaderBar(router),
+            camera_section,
+            ai_message,
+            status_text,
+            ft.Container(expand=True),
+            input_section,
+            nav_bar,
+        ],
+        expand=True,
+        spacing=0,
+    )
 
     # Function to initialize the camera
     def open_camera():
@@ -140,6 +231,13 @@ def show_translate_page(page: ft.Page, router):
                     index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
                     if thumb_tip.y < index_tip.y:
                         gesture_detected = "Thumbs Up"
+                        # Update the message when gesture is detected
+                        message_text.value = f"This sign means '{gesture_detected}' in sign language."
+                        ai_message.visible = True
+                        status_text.value = f"Gesture detected: {gesture_detected}"
+                    else:
+                        ai_message.visible = False
+                        status_text.value = ""
 
             # Encode the frame to base64
             _, buffer = cv2.imencode(".jpg", frame)
@@ -147,41 +245,21 @@ def show_translate_page(page: ft.Page, router):
 
             # Update the Image widget with the new frame
             img_widget.src_base64 = img_base64
-            status_text.value = f"Gesture detected: {gesture_detected}"
             page.update()
 
-    # Clean the page and open the camera
-    page.clean()
-    page.window_width = 400
-    page.window_height = 800
-    page.bgcolor = "#f0f4f8"
+    # Start the frame update thread
+    start_update_thread()
 
     if not open_camera():
         return
 
-    # Create navigation buttons
-    nav_bar = NavBar(router=router, active_route="/translate")
-
-    # Main layout with SPACE_BETWEEN to place nav buttons at the bottom
-    content = ft.Column(
-        controls=[
-            ft.Column(
-                controls=[img_widget, status_text],
-                alignment=ft.alignment.center,
-            ),
-            nav_bar,
-        ],
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        expand=True
-    )
-
-    # Start the frame update thread
     start_update_thread()
 
     # Return the View object
     return ft.View(
         route="/translate",
         controls=[content],
+        bgcolor=ft.colors.WHITE,
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
