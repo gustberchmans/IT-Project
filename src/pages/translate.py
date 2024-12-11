@@ -202,7 +202,7 @@ def show_translate_page(page: ft.Page, router):
                     if thumb_tip.y < index_tip.y:
                         gesture_detected = "Thumbs Up"
                         # Update the message when gesture is detected
-                        message_text.value = f"This sign means '{gesture_detected}' in sign language."
+                        message_text.value = f"This sign means '{gesture_detected}'."
                         ai_message.visible = True
                     else:
                         ai_message.visible = False
@@ -227,9 +227,9 @@ def show_translate_page(page: ft.Page, router):
             print("Camera opened")
             # Make the camera preview bigger when recording
             camera_section.width = 400  # Keep the width same
-            camera_section.height = 600  # Set height to 600 when recording
+            camera_section.height = 550  # Set height to 550 when recording
             img_widget.width = 400  # Keep the width same
-            img_widget.height = 600  # Set height to 600 when recording
+            img_widget.height = 550  # Set height to 550 when recording
             page.update()
         else:
             close_camera()
