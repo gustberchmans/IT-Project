@@ -1,4 +1,5 @@
 import flet as ft
+from services.firebase import add_score, get_current_user
 
 # Sample quiz questions
 quiz_data = [
@@ -84,6 +85,11 @@ def show_dif1_page(page: ft.Page, router):
         print("display_results called")  # Debugging om te controleren of deze functie wordt aangeroepen
         page.clean()  # Maak de pagina leeg
 
+        # Save the score to Firebase
+        user_id = get_current_user()
+        print(f"User ID: {user_id}, Score: {score}")  # Print the user_id and score
+        add_score(user_id, score, "difficulty1")
+
         # Voeg de resultaten toe aan de pagina
         page.add(
             ft.Column(
@@ -105,11 +111,18 @@ def show_dif1_page(page: ft.Page, router):
 
     # Knop om naar resultatenpagina te gaan (zichtbaar na de laatste vraag)
     show_result_button = ft.ElevatedButton(
-        
         text="Go to Results",
-        on_click=lambda e: router.navigate(f"/results/{score}/{len(quiz_data)}"),
+        on_click=lambda e: go_to_results(),
         visible=False  # Verberg de knop eerst
     )
+
+    def go_to_results():
+        user_id = get_current_user()
+        print(f"User ID: {user_id}, Score: {score}")
+        total_questions = {len(quiz_data)}  # Print the user_id and score
+        add_score(user_id, score, "difficulty1", total_questions)
+        
+        router.navigate(f"/results/{score}/{len(quiz_data)}")
 
     # Back button (top left corner)
     back_button = ft.ElevatedButton(

@@ -62,3 +62,19 @@ def verify_user(email, password):
         
     except Exception as e:
         return False, f"Login error: {str(e)}"
+
+def add_score(user_id, score, quiz_id, total_questions):
+    # Reference to the scores collection
+    scores_ref = db.collection('scores')
+
+    # Create a new score document
+    score_data = {
+        'user_id': user_id,  # Foreign key reference to the users collection
+        'score': score,
+        'quiz_id': quiz_id,  # Optional: to identify which quiz the score is for
+        'timestamp': firestore.SERVER_TIMESTAMP,
+        'total_questions': total_questions
+    }
+
+    # Add the document to the collection
+    scores_ref.add(score_data)
