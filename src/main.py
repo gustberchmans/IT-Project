@@ -7,6 +7,7 @@ from pages.learn.learn import show_learn_page
 from pages.learn.difficulties.diff1 import show_dif1_page
 from pages.account import show_account_page
 from pages.home import show_home_page
+from pages.learn.difficulties.results import show_results_page
 
 def main(page: ft.Page):
     router = Router(page)
@@ -22,9 +23,14 @@ def main(page: ft.Page):
     page.title = "GebarenTool"
     page.theme_mode = ft.ThemeMode.LIGHT
     
+
     def on_navigate(path):
         if path != "/translate":
             on_page_unload()
+
+    router.add_route("/results/{score}/{total_questions}", lambda p, score, total_questions: show_results_page(p, router, score, total_questions))
+    
+
 
     router.on_navigate = on_navigate
 
