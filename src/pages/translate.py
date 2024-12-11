@@ -22,7 +22,7 @@ update_thread = None
 ip_webcam_url = "http://10.2.88.156:8080/video"
 
 def show_translate_page(page: ft.Page, router):
-    global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message
+    global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message, camera_section
 
     # Placeholder image if the camera is not accessible
     placeholder_image = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -34,7 +34,7 @@ def show_translate_page(page: ft.Page, router):
     img_widget = ft.Image(
         src_base64=placeholder_base64, 
         width=400,
-        height=400,
+        height=400,  # Set initial height to 400
         fit=ft.ImageFit.COVER,
         border_radius=8,
     )
@@ -52,11 +52,11 @@ def show_translate_page(page: ft.Page, router):
         visible=False,  # Hide initially until there's a message
     )
 
-    # Grey camera preview area
+    # Grey camera preview area (initially set to 400x400)
     camera_section = ft.Container(
         content=img_widget,
         width=400,
-        height=400,
+        height=400,  # Set initial height to 400
         border_radius=8,
         bgcolor=ft.colors.GREY_200,
         alignment=ft.alignment.center,
@@ -88,6 +88,7 @@ def show_translate_page(page: ft.Page, router):
                     content=ft.IconButton(
                         icon=ft.icons.CAMERA_ALT_ROUNDED,
                         icon_color=ft.colors.BLACK54,
+                        on_click=lambda e: toggle_camera(page),  # Toggle camera on button click
                     ),
                     bgcolor=ft.colors.GREY_200,
                     border_radius=25,
@@ -111,7 +112,7 @@ def show_translate_page(page: ft.Page, router):
 
     # Main layout
     content = ft.Column(
-        controls=[
+        controls=[ 
             HeaderBar(router),
             camera_section,
             ai_message,
@@ -215,12 +216,37 @@ def show_translate_page(page: ft.Page, router):
             img_widget.src_base64 = img_base64
             page.update()
 
-    # Start the frame update thread only after the camera is opened
-    if not open_camera():
-        print("Failed to open camera")
-        return
-
-    start_update_thread()
+    # Toggle camera: Open/Close camera when button is pressed
+    def toggle_camera(page):
+        global cap, update_thread_running
+        if not cap or not cap.isOpened():
+            if not open_camera():
+                print("Failed to open camera")
+                return
+            start_update_thread()
+            print("Camera opened")
+            # Make the camera preview bigger when recording
+            camera_section.width = 400  # Keep the width same
+            camera_section.height = 600  # Set height to 600 when recording
+            img_widget.width = 400  # Keep the width same
+            img_widget.height = 600  # Set height to 600 when recording
+            page.update()
+        else:
+            close_camera()
+            stop_update_thread()
+            # Set the black screen with "No video available" message
+            placeholder_image = np.zeros((400, 400, 3), dtype=np.uint8)  # 400x400 placeholder
+            #cv2.putText(placeholder_image, "Camera not available", (100, 180), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            _, placeholder_buffer = cv2.imencode('.jpg', placeholder_image)
+            placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
+            img_widget.src_base64 = placeholder_base64
+            # Revert to the original size of 400x400 when camera is closed
+            camera_section.width = 400
+            camera_section.height = 400  # Reset to 400x400
+            img_widget.width = 400
+            img_widget.height = 400  # Reset to 400x400
+            print("Camera closed")
+            page.update()
 
     # Return the View object
     return ft.View(
