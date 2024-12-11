@@ -2,10 +2,13 @@ import os
 import mediapipe as mp
 import numpy as np
 import cv2
+from tqdm import tqdm
 
 dir = './data'
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(min_detection_confidence=0.75, min_tracking_confidence=0.75)
+
+if not os.path.exists(dir):
+    os.makedirs(dir)
+    print(f"Created main directory: {dir}")
 
 data = []
 labels = []
@@ -13,17 +16,39 @@ labels = []
 def extract_landmarks(results):
     landmarks = []
     if results.multi_hand_landmarks:
-        
         hand_landmarks = results.multi_hand_landmarks[0]
         for lm in hand_landmarks.landmark:
             landmarks.extend([lm.x, lm.y, lm.z])
     else:
-        
         landmarks.extend([0] * 63)
     return landmarks
 
+def get_gesture_classes():
+    gesture_classes = []
+    for item in os.listdir(dir):
+        item_path = os.path.join(dir, item)
+        if os.path.isdir(item_path):
+            gesture_classes.append(item)
+    return gesture_classes
+
+def validate_sequence_directory(sequence_path):
+    if not os.path.exists(sequence_path):
+        return False
+    required_files = [f"{i}.npy" for i in range(30)]  
+    existing_files = os.listdir(sequence_path)
+    return all(f in existing_files for f in required_files)
+
 print("Processing data directories...")
-for class_name in ['gesture', 'no_gesture']:
+gesture_classes = get_gesture_classes()
+
+if not gesture_classes:
+    print("No gesture classes found. Please run data collection first.")
+    exit()
+
+print(f"Found gesture classes: {gesture_classes}")
+
+
+for class_name in gesture_classes:
     class_path = os.path.join(dir, class_name)
     if not os.path.isdir(class_path):
         print(f"Skipping {class_path} - not a directory")
@@ -32,50 +57,66 @@ for class_name in ['gesture', 'no_gesture']:
     print(f"\nProcessing class: {class_name}")
     
     
-    for sequence in os.listdir(class_path):
+    sequences = []
+    for item in os.listdir(class_path):
+        item_path = os.path.join(class_path, item)
+        if os.path.isdir(item_path):
+            sequences.append(item)
+    
+    if not sequences:
+        print(f"No sequences found for class {class_name}")
+        continue
+    
+    
+    for sequence in tqdm(sequences, desc=f"Processing {class_name}"):
         sequence_path = os.path.join(class_path, sequence)
-        if not os.path.isdir(sequence_path):
+        
+        
+        if not validate_sequence_directory(sequence_path):
+            print(f"Skipping incomplete sequence: {sequence_path}")
             continue
             
-        print(f"Processing sequence: {sequence}")
         sequence_data = []
+
         
-        
-        for frame_num in range(10):  
+        for frame_num in range(30):
             frame_path = os.path.join(sequence_path, str(frame_num) + '.npy')
             try:
                 frame_data = np.load(frame_path)
-                if len(frame_data) == 63:  
+                
+                if len(frame_data) in [63, 126]:  
+                    
+                    if len(frame_data) == 126:
+                        frame_data = frame_data[:63]
                     sequence_data.append(frame_data)
                 else:
-                    print(f"Skipping frame {frame_num} - incorrect shape: {len(frame_data)}")
+                    print(f"Skipping frame {frame_num} - unexpected shape: {len(frame_data)}")
             except Exception as e:
                 print(f"Error loading {frame_path}: {e}")
                 continue
+
         
-        while len(sequence_data) < 10:
-            sequence_data.append(np.zeros(63))
-        
-        if len(sequence_data) == 10 and all(len(frame) == 63 for frame in sequence_data):  
+        if len(sequence_data) == 30:
             sequence_array = np.array(sequence_data)
-            if sequence_array.shape == (10, 63):
+            if sequence_array.shape == (30, 63):
                 data.append(sequence_array)
-                if class_name == 'gesture':
-                    labels.append(1)
-                else:
-                    labels.append(0)
-            else:
-                print(f"Skipping sequence {sequence} - wrong shape: {sequence_array.shape}")
+                labels.append(class_name)
 
 
-data = np.array(data, dtype=np.float32)
-labels = np.array(labels, dtype=np.int32)
+if data and labels:
+    data = np.array(data)
+    labels = np.array(labels)
 
-print(f"\nFinal dataset shape: {data.shape}")
-print(f"Labels shape: {labels.shape}")
-print(f"Number of gesture samples: {np.sum(labels == 1)}")
-print(f"Number of no_gesture samples: {np.sum(labels == 0)}")
+    print(f"\nFinal dataset shape: {data.shape}")
+    print(f"Labels shape: {labels.shape}")
+    print("Class distribution:")
+    for class_name in np.unique(labels):
+        count = np.sum(labels == class_name)
+        print(f"{class_name}: {count} samples")
 
-np.save(os.path.join(dir, 'data.npy'), data)
-np.save(os.path.join(dir, 'labels.npy'), labels)
-print("Data saved successfully")
+    
+    np.save(os.path.join(dir, 'data.npy'), data)
+    np.save(os.path.join(dir, 'labels.npy'), labels)
+    print("Data saved successfully")
+else:
+    print("No valid data collected. Please check the data collection process.")
