@@ -93,9 +93,28 @@ def show_dif1_page(page: ft.Page, router):
     options_container = ft.Column(spacing=10)
     result_text = ft.Text(size=16)
 
+    # Back button (top left corner)
+    back_button = ft.ElevatedButton(
+        text="Back",
+        on_click=lambda e: router.navigate("/learn"),
+        bgcolor="lightgray"
+    )
+
+    # Account settings button (top right corner)
+    account_settings_button = ft.IconButton(
+        icon=ft.icons.PERSON,
+        on_click=lambda e: router.navigate("/account"),
+        bgcolor="lightgray"
+    )
+
     # Layout: Camera above and quiz below
     content = ft.Column(
         controls=[
+            ft.Row(
+                controls=[back_button, account_settings_button],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                spacing=10,
+            ),
             ft.Container(
                 content=ft.Text("Camera feed here (placeholder)", size=18, color="gray"),
                 height=300,  # Use the top half of the screen
