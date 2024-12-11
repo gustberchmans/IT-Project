@@ -6,6 +6,9 @@ import base64
 import mediapipe as mp
 from components.nav_bar import NavBar
 import time
+import requests
+from io import BytesIO
+from PIL import Image
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -15,12 +18,13 @@ mp_drawing = mp.solutions.drawing_utils
 # Global variables for camera and thread control
 cap = None
 update_thread_running = False
+update_thread = None
 
 # IP Webcam URL
 ip_webcam_url = "http://10.2.88.156:8080/video"  # Default IP Webcam URL, replace as needed
 
 def show_translate_page(page: ft.Page, router):
-    global cap, update_thread_running
+    global cap, update_thread_running, update_thread
 
     # Placeholder image if the camera is not accessible
     placeholder_image = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -40,7 +44,8 @@ def show_translate_page(page: ft.Page, router):
         # Attempt to open IP webcam first
         if ip_webcam_url:
             cap = cv2.VideoCapture(ip_webcam_url)
-        
+            print("Attempting to open IP Webcam...")
+
         # Fallback to hardware webcam if IP webcam fails
         if not cap or not cap.isOpened():
             print("Failed to access IP Webcam. Trying hardware webcam...")
@@ -49,6 +54,7 @@ def show_translate_page(page: ft.Page, router):
         if not cap.isOpened():
             print("Error: Could not access any camera.")
             return False
+        print("Camera successfully opened.")
         return True
 
     # Function to release the camera
@@ -57,18 +63,40 @@ def show_translate_page(page: ft.Page, router):
         if cap and cap.isOpened():
             cap.release()
             cap = None
+            print("Camera released.")
 
     # Function to stop the update thread
     def stop_update_thread():
         global update_thread_running
         update_thread_running = False
+        if update_thread is not None:
+            update_thread.join()
+        print("Update thread stopped.")
 
     # Function to start the update thread
     def start_update_thread():
-        global update_thread_running
+        global update_thread_running, update_thread
+        update_thread_running = False
         if not update_thread_running:
             update_thread_running = True
-            threading.Thread(target=update_frame, daemon=True).start()
+            update_thread = threading.Thread(target=update_frame, daemon=True)
+            update_thread.start()
+            print("Update thread started.")
+
+    def fetch_ip_webcam_frame(url):
+        try:
+            response = requests.get(url, stream=True)
+            if response.status_code == 200:
+                bytes_io = BytesIO(response.content)
+                img = Image.open(bytes_io)
+                frame = np.array(img)
+                return frame
+            else:
+                print(f"Failed to fetch frame: {response.status_code}")
+                return None
+        except Exception as e:
+            print(f"Error fetching frame: {e}")
+            return None
 
     def update_frame():
         global update_thread_running
@@ -76,20 +104,28 @@ def show_translate_page(page: ft.Page, router):
         while update_thread_running:
             if not cap or not cap.isOpened():
                 print("Camera feed not available")
+                time.sleep(1)
                 continue
 
+            # Try to read the frame using OpenCV
             ret, frame = cap.read()
             if not ret:
-                print("Failed to capture image")
-                continue
+                print("Failed to capture image using OpenCV. Trying alternative method...")
+                frame = fetch_ip_webcam_frame(ip_webcam_url)
+                if frame is None:
+                    print("Failed to capture image using alternative method")
+                    time.sleep(1)
+                    continue
 
             # Throttle frame processing to 10 FPS
             current_time = time.time()
-            if current_time - last_frame_time < 0.1:  # 10 FPS limit
+            if current_time - last_frame_time < 0.05:  # 10 FPS limit
                 continue
             last_frame_time = current_time
 
+            # Flip the frame horizontally and vertically
             frame = cv2.flip(frame, 1)
+            frame = cv2.flip(frame, -1)
 
             # Convert to RGB for gesture processing
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -149,3 +185,9 @@ def show_translate_page(page: ft.Page, router):
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
+
+# Ensure the camera is closed when navigating away from the page
+def on_page_unload():
+    print("Page unload triggered")
+    stop_update_thread()
+    close_camera()

@@ -2,7 +2,7 @@ import flet as ft
 from router import Router
 from pages.login import show_login_page
 from pages.register import show_register_page
-from pages.translate import show_translate_page
+from pages.translate import show_translate_page, on_page_unload
 from pages.learn.learn import show_learn_page
 from pages.learn.difficulties.diff1 import show_dif1_page
 from pages.account import show_account_page
@@ -18,10 +18,16 @@ def main(page: ft.Page):
     router.add_route("/difficulty1", lambda p: show_dif1_page(p, router))
     router.add_route("/account", lambda p: show_account_page(p, router))
     router.add_route("/home", lambda p: show_home_page(p, router))
+    
     page.title = "GebarenTool"
     page.theme_mode = ft.ThemeMode.LIGHT
     
+    def on_navigate(path):
+        if path != "/translate":
+            on_page_unload()
 
-    router.navigate("/login")   
+    router.on_navigate = on_navigate
+
+    router.navigate("/login")
 
 ft.app(target=main)
