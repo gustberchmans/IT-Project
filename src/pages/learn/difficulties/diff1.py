@@ -1,4 +1,5 @@
 import flet as ft
+from services.firebase import add_score, get_current_user
 
 # Sample quiz questions
 quiz_data = [
@@ -57,7 +58,7 @@ def show_dif1_page(page: ft.Page, router):
             else:
                 quiz_completed = True  # Zet de quiz op voltooid
                 show_result_button.visible = True  # Toon de knop om naar de resultaten te gaan
-                  # Verberg de knop voor de volgende vraag
+                result_text.value = ""  # Verberg de resultaattekst
                 page.update()
 
         progress_bar.value = (quiz_index / len(quiz_data))
@@ -65,11 +66,29 @@ def show_dif1_page(page: ft.Page, router):
         # Zet de vraag en opties
         question_text.value = question
         options_container.controls = []
+
+        # Dynamisch de knoppen maken, met een flexibele verdeling van ruimte
         for i in range(0, len(options), 2):
             options_row = ft.Row(
                 controls=[
-                    ft.ElevatedButton(text=options[i], on_click=handle_answer, data=options[i]),
-                    ft.ElevatedButton(text=options[i + 1] if i + 1 < len(options) else "", on_click=handle_answer, data=options[i + 1] if i + 1 < len(options) else "")
+                    ft.ElevatedButton(
+                        text=options[i], 
+                        on_click=handle_answer, 
+                        data=options[i],
+                        width=200,  # Geef de knoppen een beperkte breedte
+                        height=70,  # Verhoog de hoogte van de knoppen
+                        bgcolor="lightblue",  # Geef de knoppen een kleurtje
+                        expand=True  # Zorg ervoor dat ze zich aanpassen aan de ruimte
+                    ),
+                    ft.ElevatedButton(
+                        text=options[i + 1] if i + 1 < len(options) else "", 
+                        on_click=handle_answer, 
+                        data=options[i + 1] if i + 1 < len(options) else "",
+                        width=200,  # Geef de knoppen een beperkte breedte
+                        height=70,  # Verhoog de hoogte van de knoppen
+                        bgcolor="lightblue",  # Geef de knoppen een kleurtje
+                        expand=True  # Zorg ervoor dat ze zich aanpassen aan de ruimte
+                    )
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=10
@@ -83,6 +102,11 @@ def show_dif1_page(page: ft.Page, router):
     def display_results():
         print("display_results called")  # Debugging om te controleren of deze functie wordt aangeroepen
         page.clean()  # Maak de pagina leeg
+
+        # Save the score to Firebase
+        user_id = get_current_user()
+        print(f"User ID: {user_id}, Score: {score}")  # Print the user_id and score
+        add_score(user_id, score, "difficulty1")
 
         # Voeg de resultaten toe aan de pagina
         page.add(
@@ -98,18 +122,27 @@ def show_dif1_page(page: ft.Page, router):
         page.update()  # Forceer een update van de pagina
 
     # UI elementen voor de quiz
-    progress_bar = ft.ProgressBar(width=200)
+    progress_bar = ft.ProgressBar(width=300, height=20,bgcolor='#2fed98',  # Stel de achtergrondkleur in
+        border_radius=10, )  # Verhoog de hoogte van de voortgangsbalk
+    progress_bar.color = "green"  # Zet de voortgangsbalk op groen
     question_text = ft.Text(size=20, weight="bold")
     options_container = ft.Column(spacing=10)
     result_text = ft.Text(size=16)
 
     # Knop om naar resultatenpagina te gaan (zichtbaar na de laatste vraag)
     show_result_button = ft.ElevatedButton(
-        
         text="Go to Results",
-        on_click=lambda e: router.navigate(f"/results/{score}/{len(quiz_data)}"),
+        on_click=lambda e: go_to_results(),
         visible=False  # Verberg de knop eerst
     )
+
+    def go_to_results():
+        user_id = get_current_user()
+        print(f"User ID: {user_id}, Score: {score}")
+        total_questions = {len(quiz_data)}  # Print the user_id and score
+        add_score(user_id, score, "difficulty1", total_questions)
+        
+        router.navigate(f"/results/{score}/{len(quiz_data)}")
 
     # Back button (top left corner)
     back_button = ft.ElevatedButton(
@@ -124,6 +157,7 @@ def show_dif1_page(page: ft.Page, router):
         tooltip="Account Settings",
         on_click=lambda e: router.navigate("/account")
     )
+    
 
     # Layout: Camera boven en quiz beneden
     content = ft.Column(
@@ -134,31 +168,39 @@ def show_dif1_page(page: ft.Page, router):
                 spacing=10,
             ),
             ft.Container(
-                content=ft.Text("Camera feed here (placeholder)", size=18, color="gray"),
+                content=ft.Text("Camera feed here (placeholder)", size=18, color="black"),
                 height=300,  # Gebruik de bovenste helft van het scherm
                 alignment=ft.alignment.center,
                 bgcolor="lightblue"
             ),
+            
+            # Verklein de padding om de vraag dichter bij de progressie balk te plaatsen
             ft.Container(
                 content=progress_bar,
-                padding=ft.padding.symmetric(vertical=10),  # Voeg wat ruimte toe
+                padding=ft.padding.symmetric(vertical=5),  # Minder ruimte tussen vraag en progressie
                 alignment=ft.alignment.center,
             ),
             ft.Container(
                 content=ft.Column(
                     controls=[
                         question_text,
+                        ft.Container(height=60),
                         options_container,
                         result_text,
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
-                    spacing=20,
+                    
+                    spacing=0,  # Verklein de ruimte tussen vraag en opties
                 ),
                 expand=True,  # Gebruik de onderste helft van het scherm
                 padding=ft.padding.all(20),
                 bgcolor="white",
             ),
-            show_result_button  # Voeg de knop toe aan de layout
+            ft.Row(
+                controls=[show_result_button],
+                alignment=ft.MainAxisAlignment.END,  # Zet de knop rechts
+                spacing=0,  # Geen extra ruimte
+            ),  # Voeg de knop toe aan de layout
         ],
         expand=True,
     )

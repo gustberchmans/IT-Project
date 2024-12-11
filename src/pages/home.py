@@ -1,6 +1,22 @@
 import flet as ft
 from components.nav_bar import NavBar
 
+def create_difficulty_row(title, router, is_locked=False, progress=None):
+    controls = [ft.Text(title)]
+    
+    if is_locked:
+        controls.append(ft.Text("Locked", color=ft.colors.GREY_500))
+    else:
+        controls.extend([
+            ft.ProgressBar(value=progress, width=150),
+            ft.TextButton("Continue", on_click=lambda e: router.navigate(f"/difficulty{title[-1]}"))
+        ])
+    
+    return ft.Row(
+        controls=controls,
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+    )
+
 def show_home_page(page: ft.Page, router):
     page.clean()
     page.window_width = 400
@@ -22,54 +38,52 @@ def show_home_page(page: ft.Page, router):
     progress_section = ft.Container(
         content=ft.Column([
             ft.Text("Progress", size=24, weight=ft.FontWeight.BOLD),
-            ft.Row([
-                ft.Text("Difficulty 1"),
-                ft.ProgressBar(value=0.5, width=150),
-                ft.TextButton("Continue", on_click=lambda e: router.navigate("/difficulty1"))
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            ft.Row([
-                ft.Text("Difficulty 2"),
-                ft.Text("Locked", color=ft.colors.GREY_500)
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            ft.Row([
-                ft.Text("Difficulty 3"),
-                ft.Text("Locked", color=ft.colors.GREY_500)
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            ft.ElevatedButton("Resume", on_click=lambda e: router.navigate("/resume"))
+            create_difficulty_row("Difficulty 1", router, progress=0.5),
+            create_difficulty_row("Difficulty 2", router, is_locked=True),
+            create_difficulty_row("Difficulty 3", router, is_locked=True),
+            ft.ElevatedButton(
+                "Resume",
+                on_click=lambda e: router.navigate("/resume"),
+                style=ft.ButtonStyle(
+                    shape=ft.RoundedRectangleBorder(radius=10),
+                )
+            )
         ]),
         padding=20,
-        margin=ft.margin.only(top=20, bottom=20),
+        bgcolor=ft.colors.WHITE,
         border_radius=10,
+        shadow=ft.BoxShadow(blur_radius=5, color=ft.colors.GREY_300)
     )
 
-    streak_text = ft.Text(
-        "Make your streak 15 today!",
-        size=16,
-        text_align=ft.TextAlign.CENTER
+    streak_text = ft.Container(
+        content=ft.Text(
+            "Make your streak 15 today!",
+            size=16,
+            text_align=ft.TextAlign.CENTER,
+            color=ft.colors.GREY_800
+        ),
+        margin=ft.margin.only(bottom=20)
     )
 
     nav_bar = NavBar(router=router, active_route="/home")
-
+    
     content = ft.Container(
         content=ft.Column(
-            [
-                ft.Container(
-                    content=ft.Column(
-                        [welcome_section, progress_section, streak_text],
-                        horizontal_alignment=ft.CrossAxisAlignment.START,
-                        spacing=20
-                    ),
-                    padding=20
-                )
+            controls=[
+                welcome_section,
+                progress_section,
+                streak_text
             ],
-            spacing=0,
-        )
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=20
+        ),
+        expand=True,
+        padding=20
     )
 
     return ft.View(
         route="/home",
         controls=[content, nav_bar],
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        padding=0
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )

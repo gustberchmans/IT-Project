@@ -2,6 +2,7 @@ import flet as ft
 from services.firebase import get_current_user, get_user_data, logout, db
 from utils.helpers import show_success_snackbar, show_error_snackbar
 from components.nav_bar import NavBar
+from components.header import HeaderBar
 
 def show_account_page(page: ft.Page, router):
     user_id = get_current_user()
@@ -52,14 +53,6 @@ def show_account_page(page: ft.Page, router):
         except Exception as e:
             show_error_snackbar(page, f"Error updating profile: {str(e)}")
 
-    back_button = ft.IconButton(
-        icon=ft.icons.ARROW_CIRCLE_LEFT_OUTLINED,
-        icon_size=40,
-        icon_color=ft.colors.GREY_900,
-        on_click=handle_back,
-        alignment=ft.alignment.top_right
-    )
-
     name_field = ft.TextField(
         value=f"{user_data['firstname']} {user_data['lastname']}", 
         prefix_icon=ft.icons.PERSON,
@@ -82,7 +75,7 @@ def show_account_page(page: ft.Page, router):
 
     profile_section = ft.Container(
         content=ft.Column([
-            back_button,
+            HeaderBar(router),
             ft.Text(f"{user_data['firstname']} {user_data['lastname']}", size=24, weight=ft.FontWeight.BOLD),
             ft.Icon(ft.icons.PERSON_PIN, size=80),
             name_field,

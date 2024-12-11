@@ -1,20 +1,21 @@
 import flet as ft
 
 def HeaderBar(router):
+    def handle_back(e):
+        router.navigate_back()
+
+    back_button = ft.IconButton(
+        icon=ft.icons.ARROW_CIRCLE_LEFT_OUTLINED,
+        icon_size=35,
+        icon_color=ft.colors.GREY_900,
+        on_click=handle_back,
+        alignment=ft.alignment.top_right
+    )
+
     return ft.Container(
         content=ft.Row(
             controls=[
-                ft.IconButton(
-                    icon=ft.icons.ARROW_BACK,
-                    on_click=lambda _: router.go("/"),
-                    icon_color=ft.colors.BLACK,
-                ),
-                ft.Text(
-                    "Live translator start",
-                    size=16,
-                    weight=ft.FontWeight.W_500,
-                ),
+                back_button
             ],
         ),
-        padding=10,
     )
