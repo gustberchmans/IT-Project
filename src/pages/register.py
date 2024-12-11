@@ -1,41 +1,43 @@
 import flet as ft
-from firebase_config import set_current_user
-from auth import register_user
-from utils import show_error_snackbar, show_success_snackbar
+from services.auth import register_user
+from utils.helpers import show_error_snackbar, show_success_snackbar
 
-def show_register_page(page, show_main_page, show_login_page):
+def show_register_page(page: ft.Page, router):
     page.clean()
     page.window_width = 400
     page.window_height = 800
     page.bgcolor = "#f0f4f8"
-    
+
     firstname_input = ft.TextField(
         label="First Name",
         border=ft.InputBorder.UNDERLINE,
         width=300,
         prefix_icon=ft.icons.PERSON,
         cursor_color=ft.colors.BLUE,
-        focused_border_color=ft.colors.BLUE
+        focused_border_color=ft.colors.BLUE,
+        text_size=16
     )
-    
+
     lastname_input = ft.TextField(
         label="Last Name",
         border=ft.InputBorder.UNDERLINE,
         width=300,
-        prefix_icon=ft.icons.PERSON_OUTLINE,
+        prefix_icon=ft.icons.PERSON,
         cursor_color=ft.colors.BLUE,
-        focused_border_color=ft.colors.BLUE
+        focused_border_color=ft.colors.BLUE,
+        text_size=16
     )
-    
+
     email_input = ft.TextField(
         label="Email",
         border=ft.InputBorder.UNDERLINE,
         width=300,
         prefix_icon=ft.icons.EMAIL,
         cursor_color=ft.colors.BLUE,
-        focused_border_color=ft.colors.BLUE
+        focused_border_color=ft.colors.BLUE,
+        text_size=16
     )
-    
+
     password_input = ft.TextField(
         label="Password",
         password=True,
@@ -44,7 +46,8 @@ def show_register_page(page, show_main_page, show_login_page):
         width=300,
         prefix_icon=ft.icons.LOCK,
         cursor_color=ft.colors.BLUE,
-        focused_border_color=ft.colors.BLUE
+        focused_border_color=ft.colors.BLUE,
+        text_size=16
     )
 
     def handle_register(e):
@@ -58,11 +61,10 @@ def show_register_page(page, show_main_page, show_login_page):
             firstname_input.value,
             lastname_input.value
         )
-        
+
         if result['success']:
-            set_current_user(result['user_id'])
             show_success_snackbar(page, "Registration successful!")
-            show_main_page()
+            router.navigate("/login")
         else:
             show_error_snackbar(page, result['error'])
             page.update()
@@ -88,46 +90,47 @@ def show_register_page(page, show_main_page, show_login_page):
     login_link = ft.TextButton(
         "Already have an account? Login",
         icon=ft.icons.LOGIN,
-        on_click=lambda _: show_login_page(page, show_main_page, show_register_page)
+        on_click=lambda _: router.navigate("/login")
     )
 
-    page.add(
-        ft.Container(
-            content=ft.Column(
-                controls=[
-                    ft.Container(
-                        content=ft.Icon(
-                            ft.icons.SIGN_LANGUAGE_ROUNDED,
-                            size=80,
-                            color=ft.colors.BLUE
-                        ),
-                        margin=ft.margin.only(top=40, bottom=20)
-                    ),
-                    ft.Text(
-                        "Create Account",
-                        size=32,
-                        weight=ft.FontWeight.BOLD,
-                        color=ft.colors.BLUE_900
-                    ),
-                    ft.Text(
-                        "Sign up to get started",
-                        size=16,
-                        color=ft.colors.GREY_700,
-                        weight=ft.FontWeight.W_500
-                    ),
-                    ft.Container(height=20),
-                    firstname_input,
-                    lastname_input,
-                    email_input,
-                    password_input,
-                    ft.Container(height=20),
-                    register_button,
-                    login_link
-                ],
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=10
+    content = ft.Column(
+        controls=[
+            ft.Container(
+                content=ft.Icon(
+                    ft.icons.SIGN_LANGUAGE_ROUNDED,
+                    size=80,
+                    color=ft.colors.BLUE
+                ),
+                margin=ft.margin.only(top=40, bottom=20)
             ),
-            padding=20,
-            expand=True
-        )
-    ) 
+            ft.Text(
+                "Create Account",
+                size=32,
+                weight=ft.FontWeight.BOLD,
+                color=ft.colors.BLUE_900
+            ),
+            ft.Text(
+                "Sign up to get started",
+                size=16,
+                color=ft.colors.GREY_700,
+                weight=ft.FontWeight.W_500
+            ),
+            ft.Container(height=20),
+            firstname_input,
+            lastname_input,
+            email_input,
+            password_input,
+            ft.Container(height=20),
+            register_button,
+            login_link
+        ],
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        spacing=10
+    )
+
+    return ft.View(
+        route="/register",
+        controls=[content],
+        vertical_alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER
+    )

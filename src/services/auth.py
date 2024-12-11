@@ -1,17 +1,14 @@
-import firebase_admin
 from firebase_admin import auth
 from firebase_admin import firestore
-from firebase_config import db
+from services.firebase import db
 
 def register_user(email, password, firstname, lastname):
     try:
-        # Create user in Firebase Authentication
         user = auth.create_user(
             email=email,
             password=password
         )
         
-        # Store additional user data in Firestore
         db.collection('Users').document(user.uid).set({
             'email': email,
             'password': password,
@@ -26,7 +23,6 @@ def register_user(email, password, firstname, lastname):
 
 def login_user(email, password):
     try:
-        # Verify user credentials
         user = auth.get_user_by_email(email)
         user_doc = db.collection('Users').document(user.uid).get()
         
@@ -37,4 +33,4 @@ def login_user(email, password):
             return {'success': False, 'error': 'Invalid password'}
         return {'success': False, 'error': 'User not found'}
     except Exception as e:
-        return {'success': False, 'error': str(e)} 
+        return {'success': False, 'error': str(e)}
