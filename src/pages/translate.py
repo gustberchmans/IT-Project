@@ -22,7 +22,7 @@ update_thread = None
 ip_webcam_url = "http://10.2.88.156:8080/video"  # Default IP Webcam URL, replace as needed
 
 def show_translate_page(page: ft.Page, router):
-    global cap, update_thread_running, update_thread
+    global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message
 
     # Placeholder image if the camera is not accessible
     placeholder_image = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -69,7 +69,7 @@ def show_translate_page(page: ft.Page, router):
     # Bottom input bar with camera button
     input_section = ft.Container(
         content=ft.Row(
-            controls=[
+            controls=[ 
                 ft.Container(
                     content=ft.TextField(
                         hint_text="Type",
@@ -169,6 +169,7 @@ def show_translate_page(page: ft.Page, router):
         while update_thread_running:
             if not cap or not cap.isOpened():
                 print("Camera feed not available")
+                time.sleep(1)
                 continue
 
             ret, frame = cap.read()
@@ -215,29 +216,11 @@ def show_translate_page(page: ft.Page, router):
             img_widget.src_base64 = img_base64
             page.update()
 
-    # Start the frame update thread
-    start_update_thread()
-
+    # Start the frame update thread only after the camera is opened
     if not open_camera():
+        print("Failed to open camera")
         return
 
-    # Create navigation buttons
-    nav_bar = NavBar(router=router, active_route="/translate")
-
-    # Main layout with SPACE_BETWEEN to place nav buttons at the bottom
-    content = ft.Column(
-        controls=[
-            ft.Column(
-                controls=[img_widget, status_text],
-                alignment=ft.alignment.center,
-            ),
-            nav_bar,
-        ],
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        expand=True
-    )
-
-    # Start the frame update thread
     start_update_thread()
 
     # Return the View object
@@ -248,9 +231,6 @@ def show_translate_page(page: ft.Page, router):
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
-
-    # Start the frame update thread
-    start_update_thread()
 
 # Ensure the camera is closed when navigating away from the page
 def on_page_unload():
