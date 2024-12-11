@@ -6,14 +6,14 @@ import mediapipe as mp
 from collections import deque
 
 
-model_path = './models/final_model.h5'
+model_path = './models/my_model.h5'
 model = load_model(model_path)
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(min_detection_confidence=0.75, min_tracking_confidence=0.75)
 mp_drawing = mp.solutions.drawing_utils
 
 
-actions = np.array(['no_gesture', 'Hello'])
+actions = np.array(['no_gesture', 'hello', 'eerst'])
 
 
 sequence = deque(maxlen=10)  

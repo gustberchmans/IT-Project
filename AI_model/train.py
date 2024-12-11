@@ -41,7 +41,7 @@ print(f"Labels shape: {labels.shape}")
 
 
 X_train, X_test, y_train, y_test = train_test_split(
-    data, labels, test_size=0.1, random_state=34, stratify=labels.argmax(axis=1)
+    data, labels, test_size=0.2, random_state=34, stratify=labels.argmax(axis=1)
 )
 
 print(f"Train set: {X_train.shape[0]} samples")
@@ -49,10 +49,10 @@ print(f"Test set: {X_test.shape[0]} samples")
 
 
 model = Sequential([
-    LSTMV1(64, return_sequences=True, activation='relu', input_shape=(timesteps, features)),
-    LSTMV1(128, return_sequences=True, activation='relu'),
-    LSTMV1(256, return_sequences=False, activation='relu'),
-    Dense(128, activation='relu'),
+    LSTMV1(32, return_sequences=True, activation='relu', input_shape=(timesteps, features)),
+    LSTMV1(64, return_sequences=True, activation='relu'),
+    LSTMV1(32, return_sequences=False, activation='relu'),
+    Dense(32, activation='relu'),
     Dropout(0.3),
     
     Dense(labels.shape[1], activation='softmax')
@@ -81,34 +81,36 @@ reduce_lr = ReduceLROnPlateau(
 checkpoint = ModelCheckpoint(
     'best_model.h5',
     monitor='val_loss',
-    save_best_weights_only=True
+    save_weights_only=True,
+    save_best_only=True
 )
 
 history = model.fit(
     X_train, 
     y_train,
-    epochs=200, 
+    epochs=200,
     batch_size=32,
     validation_split=0.2,
     callbacks=[early_stopping, reduce_lr, checkpoint]
 )
 
-
 model_dir = './models'
+os.makedirs(model_dir, exist_ok=True)
 model_path = os.path.join(model_dir, 'my_model.h5')
-print("Model saved successfully")
 
+try:
+    model.save(model_path)
+    print(f"Model saved successfully to {model_path}")
+except Exception as e:
+    print(f"Error saving model: {str(e)}")
 
 predictions = np.argmax(model.predict(X_test), axis=1)
 test_labels = np.argmax(y_test, axis=1)
 
-
 accuracy = accuracy_score(test_labels, predictions)
 print(f"Test Accuracy: {accuracy:.2f}")
 
-
 plt.figure(figsize=(15, 5))
-
 
 plt.subplot(1, 3, 1)
 plt.plot(history.history['loss'], label='Training Loss')
@@ -118,7 +120,6 @@ plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend()
 
-
 plt.subplot(1, 3, 2)
 plt.plot(history.history['categorical_accuracy'], label='Training Accuracy')
 plt.plot(history.history['val_categorical_accuracy'], label='Validation Accuracy')
@@ -126,7 +127,6 @@ plt.title('Model Accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.legend()
-
 
 plt.subplot(1, 3, 3)
 cm = confusion_matrix(test_labels, predictions)
@@ -136,4 +136,15 @@ plt.xlabel('Predicted')
 plt.ylabel('True')
 
 plt.tight_layout()
+
+diagram_dir = os.path.join(dir, 'diagram')
+os.makedirs(diagram_dir, exist_ok=True)
+diagram_path = os.path.join(diagram_dir, 'training_history.png')
+
+try:
+    plt.savefig(diagram_path)
+    print(f"Diagram saved successfully to {diagram_path}")
+except Exception as e:
+    print(f"Error saving diagram: {str(e)}")
+
 plt.show()
