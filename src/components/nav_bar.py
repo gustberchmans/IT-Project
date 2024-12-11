@@ -10,6 +10,7 @@ class NavBar(ft.UserControl):
         return ft.Container(
             content=ft.Row(
                 controls=[
+                    self._create_nav_button("", "/home", ft.icons.HOME),
                     self._create_nav_button("", "/learn", ft.icons.SCHOOL),
                     self._create_nav_button("", "/translate", ft.icons.TRANSLATE),
                     self._create_nav_button("", "/account", ft.icons.PERSON),

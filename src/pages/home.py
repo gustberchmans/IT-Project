@@ -35,7 +35,6 @@ def show_home_page(page: ft.Page, router):
         padding=20,
         margin=ft.margin.only(top=20, bottom=20),
         border_radius=10,
-        shadow=ft.BoxShadow(blur_radius=5, color=ft.colors.GREY_300)
     )
 
     streak_text = ft.Text(
@@ -47,7 +46,7 @@ def show_home_page(page: ft.Page, router):
     nav_bar = NavBar(router=router, active_route="/home")
 
     content = ft.Column(
-        controls=[welcome_text, progress_section, streak_text],
+        controls=[ft.Container(height=20),welcome_text, progress_section, streak_text],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         spacing=20
     )
@@ -56,5 +55,6 @@ def show_home_page(page: ft.Page, router):
         route="/home",
         controls=[content, nav_bar],
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        padding=0
     )

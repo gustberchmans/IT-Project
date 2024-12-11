@@ -10,7 +10,7 @@ def show_account_page(page: ft.Page, router):
 
     if user_data is None:
         show_error_snackbar(page, "User data not found.")
-        router.navigate("/login")
+        router.navigate("/home")
         return
 
     def handle_logout(e):

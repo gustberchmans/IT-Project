@@ -4,10 +4,8 @@ from utils.helpers import show_error_snackbar, show_success_snackbar
 from services.firebase import set_current_user
 
 def show_login_page(page: ft.Page, router):
-    page.clean()
     page.window_width = 400
     page.window_height = 800
-    page.bgcolor = "#f0f4f8"
 
     email_field = ft.TextField(
         label="Email",
@@ -84,7 +82,6 @@ def show_login_page(page: ft.Page, router):
                     size=80,
                     color=ft.colors.BLUE
                 ),
-                margin=ft.margin.only(top=60, bottom=20)
             ),
             ft.Text(
                 "Welcome Back!",
@@ -98,7 +95,7 @@ def show_login_page(page: ft.Page, router):
                 color=ft.colors.GREY_700,
                 weight=ft.FontWeight.W_500
             ),
-            ft.Container(height=20),
+           
             email_field,
             password_field,
             ft.Container(height=20),
