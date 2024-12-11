@@ -196,7 +196,11 @@ def show_dif1_page(page: ft.Page, router):
                 padding=ft.padding.all(20),
                 bgcolor="white",
             ),
-            show_result_button  # Voeg de knop toe aan de layout
+            ft.Row(
+                controls=[show_result_button],
+                alignment=ft.MainAxisAlignment.END,  # Zet de knop rechts
+                spacing=0,  # Geen extra ruimte
+            ),  # Voeg de knop toe aan de layout
         ],
         expand=True,
     )
