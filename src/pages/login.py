@@ -1,14 +1,14 @@
 import flet as ft
-from firebase_config import verify_user, set_current_user
-from auth import login_user
-from utils import show_error_snackbar, show_success_snackbar
+from services.auth import login_user
+from utils.helpers import show_error_snackbar, show_success_snackbar
+from services.firebase import set_current_user
 
-def show_login_page(page, on_success, on_register):
+def show_login_page(page: ft.Page, router):
     page.clean()
     page.window_width = 400
     page.window_height = 800
-    page.bgcolor = "#f0f4f8"  # Light blue-gray background
-    
+    page.bgcolor = "#f0f4f8"
+
     email_field = ft.TextField(
         label="Email",
         border=ft.InputBorder.UNDERLINE,
@@ -18,7 +18,7 @@ def show_login_page(page, on_success, on_register):
         focused_border_color=ft.colors.BLUE,
         text_size=16
     )
-    
+
     password_field = ft.TextField(
         label="Password",
         password=True,
@@ -38,9 +38,11 @@ def show_login_page(page, on_success, on_register):
 
         result = login_user(email_field.value, password_field.value)
         if result['success']:
+            print(result['user_id'])
             set_current_user(result['user_id'])
+            
             show_success_snackbar(page, "Login successful!")
-            on_success()
+            router.navigate("/home")
         else:
             show_error_snackbar(page, result['error'])
             page.update()
@@ -66,44 +68,51 @@ def show_login_page(page, on_success, on_register):
     register_button = ft.TextButton(
         "Don't have an account? Register",
         icon=ft.icons.PERSON_ADD,
-        on_click=lambda _: on_register(page, on_success, show_login_page)
+        on_click=lambda _: router.navigate("/register")
     )
 
-    page.add(
-        ft.Container(
-            content=ft.Column(
-                controls=[
-                    ft.Container(
-                        content=ft.Icon(
-                            ft.icons.SIGN_LANGUAGE_ROUNDED,
-                            size=80,
-                            color=ft.colors.BLUE
-                        ),
-                        margin=ft.margin.only(top=60, bottom=20)
-                    ),
-                    ft.Text(
-                        "Welcome Back!",
-                        size=32,
-                        weight=ft.FontWeight.BOLD,
-                        color=ft.colors.BLUE_900
-                    ),
-                    ft.Text(
-                        "Sign in to continue",
-                        size=16,
-                        color=ft.colors.GREY_700,
-                        weight=ft.FontWeight.W_500
-                    ),
-                    ft.Container(height=20),
-                    email_field,
-                    password_field,
-                    ft.Container(height=20),
-                    login_button,
-                    register_button
-                ],
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=10
+    skip_login_button = ft.TextButton(
+        "Skip Login",
+        on_click=lambda _: router.navigate("/home")
+    )
+
+    content = ft.Column(
+        controls=[
+            ft.Container(
+                content=ft.Icon(
+                    ft.icons.SIGN_LANGUAGE_ROUNDED,
+                    size=80,
+                    color=ft.colors.BLUE
+                ),
+                margin=ft.margin.only(top=60, bottom=20)
             ),
-            padding=20,
-            expand=True
-        )
-    ) 
+            ft.Text(
+                "Welcome Back!",
+                size=32,
+                weight=ft.FontWeight.BOLD,
+                color=ft.colors.BLUE_900
+            ),
+            ft.Text(
+                "Sign in to continue",
+                size=16,
+                color=ft.colors.GREY_700,
+                weight=ft.FontWeight.W_500
+            ),
+            ft.Container(height=20),
+            email_field,
+            password_field,
+            ft.Container(height=20),
+            login_button,
+            register_button,
+            skip_login_button
+        ],
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        spacing=10
+    )
+
+    return ft.View(
+        route="/login",
+        controls=[content],
+        vertical_alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER
+    )

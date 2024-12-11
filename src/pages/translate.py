@@ -1,15 +1,11 @@
-import cv2
 import flet as ft
-import base64
+import cv2
 import threading
-import mediapipe as mp
 import numpy as np
+import base64
+import mediapipe as mp
+from components.nav_bar import NavBar
 import time
-
-from leerTool import leerTool
-from account import account
-from login import show_login_page
-from register import show_register_page
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -20,12 +16,8 @@ mp_drawing = mp.solutions.drawing_utils
 cap = None
 update_thread_running = False
 
-def main(page: ft.Page):
+def show_translate_page(page: ft.Page, router):
     global cap, update_thread_running
-
-    # Set the default theme mode to Light
-    page.theme_mode = ft.ThemeMode.LIGHT
-    page.bgcolor = "white"
 
     # Placeholder image if the camera is not accessible
     placeholder_image = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -40,10 +32,9 @@ def main(page: ft.Page):
     # Function to initialize the camera
     def open_camera():
         global cap
-        ip_webcam_url = "http://10.2.88.78:8080/video"  # Replace with your IP Webcam URL
-        cap = cv2.VideoCapture(ip_webcam_url)
+        cap = cv2.VideoCapture(0)
         if not cap.isOpened():
-            print("Error: Could not access the IP Webcam stream.")
+            print("Error: Could not access the camera.")
             return False
         return True
 
@@ -66,56 +57,9 @@ def main(page: ft.Page):
             update_thread_running = True
             threading.Thread(target=update_frame, daemon=True).start()
 
-    # Main page display logic
-    def show_main_page():
-        global update_thread_running
-
-        # Clean the page and open the camera
-        page.clean()
-        if not open_camera():
-            return
-
-        # Create navigation buttons
-        button1 = ft.ElevatedButton("Learn", on_click=lambda e: switch_to_page(leerTool))
-        button2 = ft.ElevatedButton("Translate", on_click=lambda e: None)
-        button3 = ft.ElevatedButton("Account", on_click=lambda e: switch_to_page(account))
-
-        # Bottom row for navigation buttons
-        nav_buttons = ft.Row(
-            controls=[button1, button2, button3],
-            alignment=ft.MainAxisAlignment.CENTER,
-            spacing=20  # Add spacing between the buttons
-        )
-
-        # Main layout with SPACE_BETWEEN to place nav buttons at the bottom
-        layout = ft.Column(
-            controls=[
-                ft.Column(
-                    controls=[img_widget, status_text],
-                    alignment=ft.alignment.center,
-                ),  # Centered content (camera feed and status)
-                nav_buttons,  # Navigation buttons at the bottom
-            ],
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,  # Space between main content and nav
-            expand=True  # Allow column to expand and push content apart
-        )
-
-        # Add the layout to the page
-        page.add(layout)
-
-        # Start the frame update thread
-        start_update_thread()
-
-    # Function to switch between pages
-    def switch_to_page(target_page):
-        stop_update_thread()
-        close_camera()
-        target_page(page, show_main_page, leerTool, account)
-
     def update_frame():
         global update_thread_running
-        last_frame_time = time.time()
-
+        last_frame_time = 0
         while update_thread_running:
             if not cap or not cap.isOpened():
                 print("Camera feed not available")
@@ -126,51 +70,69 @@ def main(page: ft.Page):
                 print("Failed to capture image")
                 continue
 
-            # Throttle frame processing to 10 FPS to reduce overhead
+            # Throttle frame processing to 10 FPS
             current_time = time.time()
-            if current_time - last_frame_time < 0.05:  # 10 FPS limit
+            if current_time - last_frame_time < 0.1:  # 10 FPS limit
                 continue
             last_frame_time = current_time
 
-            # Rotate the frame 180 degrees (flip upside down)
-            frame = cv2.rotate(frame, cv2.ROTATE_180)
-            
-            # Flip the frame horizontally for a mirror-like effect
             frame = cv2.flip(frame, 1)
 
-            # Convert to RGB only for gesture processing
+            # Convert to RGB for gesture processing
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = hands.process(rgb_frame)
 
             # Initialize gesture detection variable
             gesture_detected = ""
-            
-            # Detect and draw landmarks only if hands are detected
             if results.multi_hand_landmarks:
                 for hand_landmarks in results.multi_hand_landmarks:
                     mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-
-                    # Gesture recognition logic (Example: "Thumbs Up")
                     thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
                     index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-
-                    # Example for "Thumbs Up" gesture detection
                     if thumb_tip.y < index_tip.y:
                         gesture_detected = "Thumbs Up"
-                    
-                    # Add other gestures detection as needed
-            
+
             # Encode the frame to base64
             _, buffer = cv2.imencode(".jpg", frame)
             img_base64 = base64.b64encode(buffer).decode("utf-8")
 
             # Update the Image widget with the new frame
             img_widget.src_base64 = img_base64
-            # Update the status text with the detected gesture
             status_text.value = f"Gesture detected: {gesture_detected}"
             page.update()
 
-    # Start with login page instead of main page
-    show_login_page(page, lambda: show_main_page(), lambda p, m, l: show_register_page(p, m, l))
+    # Clean the page and open the camera
+    page.clean()
+    page.window_width = 400
+    page.window_height = 800
+    page.bgcolor = "#f0f4f8"
 
-ft.app(target=main)
+    if not open_camera():
+        return
+
+    # Create navigation buttons
+    nav_bar = NavBar(router=router, active_route="/translate")
+
+    # Main layout with SPACE_BETWEEN to place nav buttons at the bottom
+    content = ft.Column(
+        controls=[
+            ft.Column(
+                controls=[img_widget, status_text],
+                alignment=ft.alignment.center,
+            ),
+            nav_bar,
+        ],
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        expand=True
+    )
+
+    # Return the View object
+    return ft.View(
+        route="/translate",
+        controls=[content],
+        vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER
+    )
+
+    # Start the frame update thread
+    start_update_thread()
