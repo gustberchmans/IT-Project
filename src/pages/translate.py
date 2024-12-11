@@ -19,7 +19,7 @@ update_thread_running = False
 update_thread = None
 
 # IP Webcam URL
-ip_webcam_url = "http://10.2.88.156:8080/video"  # Default IP Webcam URL, replace as needed
+ip_webcam_url = "http://10.2.88.156:8080/video"
 
 def show_translate_page(page: ft.Page, router):
     global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message
@@ -203,7 +203,6 @@ def show_translate_page(page: ft.Page, router):
                         # Update the message when gesture is detected
                         message_text.value = f"This sign means '{gesture_detected}' in sign language."
                         ai_message.visible = True
-                        status_text.value = f"Gesture detected: {gesture_detected}"
                     else:
                         ai_message.visible = False
                         status_text.value = ""
