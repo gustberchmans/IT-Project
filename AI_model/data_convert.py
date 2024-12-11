@@ -8,6 +8,7 @@ data = np.load(os.path.join(dir, 'data.npy'))
 labels = np.load(os.path.join(dir, 'labels.npy'))
 
 try:
+    
     samples, frames, features = data.shape
     data_reshaped = data.reshape(samples, frames * features)
     
@@ -21,10 +22,15 @@ try:
     
     csv_path = os.path.join(dir, 'gesture_data.csv')
     df.to_csv(csv_path, index=False)
+    
+    
     print(f"Data saved to: {csv_path}")
     print(f"Shape of data: {df.shape}")
-    print(f"Number of gestures: {sum(labels == 1)}")
-    print(f"Number of no-gestures: {sum(labels == 0)}")
+    print("\nUnique labels and their counts:")
+    print(df['label'].value_counts())
+    
+    
+    print("\nUnique labels found:", np.unique(labels))
 
 except Exception as e:
     print(f"Error converting data: {e}")

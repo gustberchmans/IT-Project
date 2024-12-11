@@ -13,10 +13,10 @@ hands = mp_hands.Hands(min_detection_confidence=0.75, min_tracking_confidence=0.
 mp_drawing = mp.solutions.drawing_utils
 
 
-actions = np.array(['no_gesture', 'hello', 'eerst'])
+actions = np.array(['huis', 'no_gesture'])
 
 
-sequence = deque(maxlen=10)  
+sequence = deque(maxlen=30)  
 
 cap = cv2.VideoCapture(0)
 
@@ -48,8 +48,8 @@ while cap.isOpened():
             sequence.append(landmarks)
 
             
-            if len(sequence) == 10:
-                input_data = np.array(sequence).reshape(1, 10, 63)
+            if len(sequence) == 30:
+                input_data = np.array(sequence).reshape(1, 30, 63)
                 
                 
                 prediction = model.predict(input_data, verbose=0)[0]

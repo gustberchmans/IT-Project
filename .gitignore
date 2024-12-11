@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 gebarentool/serviceAccountKey.json
-AI_model/data
+AI_model/data/
 
 # C extensions
 *.so
