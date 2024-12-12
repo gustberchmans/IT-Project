@@ -18,6 +18,8 @@ def load_streak():
         last_date = datetime.strptime(data.get('last_date', '2000-01-01'), '%Y-%m-%d').date()
         current_date = datetime.now().date()
         current_streak = data.get('streak', 0)
+        total_days = data.get('total_days', 0)
+        
         #debug print
         print(f"Last date: {last_date}")
         print(f"Current date: {current_date}")
@@ -33,6 +35,7 @@ def load_streak():
         elif days_difference == 1:  # New day, increment streak
             print("New day - incrementing streak")
             current_streak += 1
+            total_days += 1
         else:
             print("Same day - keeping current streak")
         
@@ -40,7 +43,8 @@ def load_streak():
         with open(json_file, 'w') as f:
             json.dump({
                 "streak": current_streak,
-                "last_date": current_date.strftime('%Y-%m-%d')
+                "last_date": current_date.strftime('%Y-%m-%d'),
+                "total_days": total_days
             }, f, indent=4)
             
         print(f"Final streak value: {current_streak}")
@@ -50,11 +54,35 @@ def load_streak():
         print(f"Error handling streak: {e}")
         return 0
 
+def load_progress():
+    json_file = 'src/components/progress.json'
+    try:
+        with open(json_file, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading progress: {e}")
+        return {"difficulty1": 0, "difficulty2": 0, "difficulty3": 0}
+
+def save_progress(difficulty_number, progress_value):
+    json_file = 'src/components/progress.json'
+    try:
+        current_progress = load_progress()
+        current_progress[f"difficulty{difficulty_number}"] = progress_value
+        
+        with open(json_file, 'w') as f:
+            json.dump(current_progress, f, indent=4)
+    except Exception as e:
+        print(f"Error saving progress: {e}")
+
 def create_difficulty_row(title, router, is_locked=False, progress=None):
+    difficulty_number = title[-1]  # Get the difficulty number from title
+    progress_data = load_progress()
+    current_progress = progress_data[f"difficulty{difficulty_number}"]
+    
     controls = [
         ft.Container(
             content=ft.Text(title),
-            width=100  
+            width=100
         )
     ]
     
@@ -67,12 +95,17 @@ def create_difficulty_row(title, router, is_locked=False, progress=None):
         )
     else:
         controls.extend([
-            ft.ProgressBar(value=progress, width=100),
+            ft.ProgressBar(
+                value=current_progress,
+                width=100,
+                bgcolor=ft.colors.GREY_300,
+                color=ft.colors.BLUE,
+            ),
             ft.Container(
                 content=ft.TextButton("Continue", 
-                    on_click=lambda e: router.navigate(f"/difficulty{title[-1]}")
+                    on_click=lambda e: router.navigate(f"/difficulty{difficulty_number}")
                 ),
-                width=100,  
+                width=100,
                 alignment=ft.alignment.center_right
             )
         ])
@@ -80,8 +113,17 @@ def create_difficulty_row(title, router, is_locked=False, progress=None):
     return ft.Row(
         controls=controls,
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        width=400  
+        width=400
     )
+
+def load_days_progress():
+    json_file = 'src/components/streak.json'
+    try:
+        with open(json_file, 'r') as f:
+            data = json.load(f)
+            return data.get('total_days', 0)
+    except:
+        return 0
 
 def show_home_page(page: ft.Page, router):
     page.clean()
@@ -138,6 +180,35 @@ def show_home_page(page: ft.Page, router):
         margin=ft.margin.only(bottom=20)
     )
 
+    # Add these new progress bars after streak_text
+    total_days = load_days_progress()
+    
+    monthly_progress = min(total_days / 30, 1.0)
+    days_left_monthly = max(30 - total_days, 0)
+    
+    monthly_progress_row = ft.Row(
+        controls=[
+            ft.Text("30 Days Goal:", size=14),
+            ft.ProgressBar(value=monthly_progress, width=100),
+            ft.Text(f"{days_left_monthly} days left", size=14)
+        ],
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        width=400
+    )
+
+    yearly_progress = min(total_days / 365, 1.0)
+    days_left_yearly = max(365 - total_days, 0)
+    
+    yearly_progress_row = ft.Row(
+        controls=[
+            ft.Text("365 Days Goal:", size=14),
+            ft.ProgressBar(value=yearly_progress, width=100),
+            ft.Text(f"{days_left_yearly} days left", size=14)
+        ],
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        width=400
+    )
+
     nav_bar = NavBar(router=router, active_route="/home")
     
     content = ft.Container(
@@ -145,7 +216,9 @@ def show_home_page(page: ft.Page, router):
             controls=[
                 welcome_section,
                 progress_section,
-                streak_text
+                streak_text,
+                monthly_progress_row,
+                yearly_progress_row,
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20
