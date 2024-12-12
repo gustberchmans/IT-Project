@@ -8,7 +8,7 @@ video_data = [
     {"video_url": "", "word": "bird"}
 ]
 
-def show_dif2_page(page: ft.Page, router):
+def show_d1l2_page(page: ft.Page, router):
     page.clean()
 
     video_index = 0  # Start at the first video

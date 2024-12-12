@@ -10,7 +10,7 @@ quiz_data = [
     {"question": "What is the powerhouse of the cell?", "options": ["Nucleus", "Mitochondria", "Ribosome", "Golgi Apparatus"], "answer": "Mitochondria"},
 ]
 
-def show_dif1_page(page: ft.Page, router):
+def show_d1l1_page(page: ft.Page, router):
     page.clean()
 
     # Variables for progress and score
