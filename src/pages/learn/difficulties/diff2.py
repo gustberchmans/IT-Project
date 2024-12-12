@@ -42,10 +42,15 @@ def show_dif2_page(page: ft.Page, router):
                             alignment=ft.alignment.center
                         ),
                         user_input,
-                        ft.ElevatedButton("Submit", on_click=lambda e: check_answer(word))
+                        ft.Container(
+                            content=ft.ElevatedButton("Submit", on_click=lambda e: check_answer(word)),
+                            alignment=ft.alignment.bottom_right,
+                            padding=ft.padding.only(right=20, bottom=20),
+                        )
                     ],
                     spacing=10,
-                    alignment=ft.MainAxisAlignment.CENTER
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    expand=True
                 )
             )
             page.update()
@@ -62,10 +67,15 @@ def show_dif2_page(page: ft.Page, router):
                         alignment=ft.alignment.center
                     ),
                     ft.Text(f"The word is: {word}", size=20, weight="bold"),
-                    ft.ElevatedButton("Next", on_click=proceed_to_typing)
+                    ft.Container(
+                        content=ft.ElevatedButton("Next", on_click=proceed_to_typing),
+                        alignment=ft.alignment.bottom_right,
+                        padding=ft.padding.only(right=20, bottom=20),
+                    )
                 ],
                 spacing=10,
-                alignment=ft.MainAxisAlignment.CENTER
+                alignment=ft.MainAxisAlignment.CENTER,
+                expand=True
             )
         )
         page.update()
