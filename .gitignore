@@ -130,6 +130,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+myenv/
 
 # Spyder project settings
 .spyderproject
@@ -168,4 +169,4 @@ serviceAccountKey.json
 
 # Node.js dependencies
 package-lock.json
-gebarentool/serviceAccountKey.json
+IT-project/serviceAccountKey.json

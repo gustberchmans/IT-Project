@@ -1,5 +1,5 @@
 import flet as ft
-from services.auth import login_user
+from services.auth import login_user, login_test_user
 from utils.helpers import show_error_snackbar, show_success_snackbar
 from services.firebase import set_current_user
 
@@ -69,11 +69,15 @@ def show_login_page(page: ft.Page, router):
         on_click=lambda _: router.navigate("/register")
     )
 
+    def handle_skip_login(e):
+        set_current_user("5B2dl3egS4NzIthBnYNYQvLjWfJ3")
+        router.navigate("/home")
+
     skip_login_button = ft.TextButton(
         "Skip Login",
-        on_click=lambda _: router.navigate("/home")
+        on_click=handle_skip_login
     )
-
+    
     content = ft.Column(
         controls=[
             ft.Container(

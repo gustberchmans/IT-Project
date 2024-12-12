@@ -3,6 +3,7 @@ from services.firebase import get_current_user, get_user_data, logout, db
 from utils.helpers import show_success_snackbar, show_error_snackbar
 from components.nav_bar import NavBar
 from components.header import HeaderBar
+from services.auth import hash_password
 
 def show_account_page(page: ft.Page, router):
     user_id = get_current_user()
@@ -32,13 +33,14 @@ def show_account_page(page: ft.Page, router):
             new_firstname, new_lastname = new_name
             new_email = email_field.value
             new_password = password_field.value.replace('•', '') if not password_field.password else password_field.value
+            hashed_password = hash_password(new_password)
 
             # Update the database
             db.collection('Users').document(user_id).update({
                 'firstname': new_firstname,
                 'lastname': new_lastname,
                 'email': new_email,
-                'password': new_password
+                'password': hashed_password
             })
 
             # Update the user data in memory
@@ -46,7 +48,7 @@ def show_account_page(page: ft.Page, router):
                 'firstname': new_firstname,
                 'lastname': new_lastname,
                 'email': new_email,
-                'password': new_password
+                'password': hashed_password
             })
 
             show_success_snackbar(page, "Profile updated successfully!")
@@ -66,11 +68,11 @@ def show_account_page(page: ft.Page, router):
     )
 
     password_field = ft.TextField(
-        value=user_data['password'],
+        value="",
         prefix_icon=ft.icons.LOCK,
         password=True,
         can_reveal_password=True,
-        label="Password"
+        label="New Password"
     )
 
     profile_section = ft.Container(
