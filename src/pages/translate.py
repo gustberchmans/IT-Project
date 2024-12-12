@@ -1,5 +1,6 @@
 import flet as ft
 import cv2
+import os
 import threading
 import numpy as np
 import base64
@@ -7,11 +8,18 @@ import mediapipe as mp
 from components.header import HeaderBar
 from components.nav_bar import NavBar
 import time
+import tensorflow as tf
+from tensorflow.keras.models import load_model
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 mp_drawing = mp.solutions.drawing_utils
+
+model_path = os.path.join(os.path.dirname(__file__), "../models/Hello_model.h5")
+
+# Load the model
+model = load_model(model_path)
 
 # Global variables for camera and thread control
 cap = None
@@ -19,7 +27,7 @@ update_thread_running = False
 update_thread = None
 
 # IP Webcam URL
-ip_webcam_url = "http://10.2.88.156:8080/video"
+ip_webcam_url = "http://192.168.0.130:8080/video"
 
 def show_translate_page(page: ft.Page, router):
     global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message, camera_section
@@ -164,9 +172,47 @@ def show_translate_page(page: ft.Page, router):
             update_thread_running = True
             threading.Thread(target=update_frame, daemon=True).start()
 
+    def extract_landmarks(results):
+        """
+        Extracts hand landmarks from MediaPipe results.
+        :param results: MediaPipe hand processing results
+        :return: Flattened array of hand landmarks or None if no hands detected
+        """
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                # Extract and flatten all 21 landmarks (x, y, z)
+                landmarks = [
+                    [lm.x, lm.y, lm.z] for lm in hand_landmarks.landmark
+                ]
+                flattened_landmarks = np.array(landmarks).flatten()
+                return flattened_landmarks
+        return None
+
+    def preprocess_landmarks(landmarks):
+        """
+        Prepares landmarks for model input.
+        :param landmarks: Flattened landmarks array
+        :return: Preprocessed landmarks with the correct shape for the model
+        """
+        # Normalize landmarks (optional, if required by the model)
+        landmarks = np.array(landmarks)
+        landmarks = landmarks / np.linalg.norm(landmarks)  # Normalize vector length
+
+        # Expand dimensions to match model input (1, 10, 63)
+        # Since the model expects a sequence of 10 frames, replicate landmarks
+        sequence = np.tile(landmarks, (10, 1))
+        sequence = np.expand_dims(sequence, axis=0)
+        return sequence
+
     def update_frame():
         global update_thread_running
         last_frame_time = 0
+        frame_skipped = 0  # Frame skip counter for throttling inference
+
+        # Debouncing buffer for consistent gesture detection
+        debounce_buffer = []
+        debounce_threshold = 3  # Minimum consecutive consistent frames to update message
+
         while update_thread_running:
             if not cap or not cap.isOpened():
                 print("Camera feed not available")
@@ -178,41 +224,57 @@ def show_translate_page(page: ft.Page, router):
                 print("Failed to capture image")
                 continue
 
-            # Throttle frame processing to 20 FPS
+            # Throttle frame processing to 20 FPS for display
             current_time = time.time()
-            if current_time - last_frame_time < 0.05:  # 20 FPS limit
+            if current_time - last_frame_time < 0.05:  # ~20 FPS
                 continue
             last_frame_time = current_time
 
-            # Flip the frame horizontally and vertically
-            frame = cv2.flip(frame, 1)  # Flip horizontally
-            frame = cv2.flip(frame, -1)  # Flip vertically
-
-            # Convert to RGB for gesture processing
+            # Flip the frame and convert to RGB
+            frame = cv2.flip(frame, 1)
+            frame = cv2.flip(frame, -1)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            # Process the frame with MediaPipe Hands
             results = hands.process(rgb_frame)
+            landmarks = extract_landmarks(results)
 
-            # Initialize gesture detection variable
-            gesture_detected = ""
-            if results.multi_hand_landmarks:
-                for hand_landmarks in results.multi_hand_landmarks:
-                    mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-                    thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
-                    index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-                    if thumb_tip.y < index_tip.y:
-                        gesture_detected = "Thumbs Up"
-                        # Update the message when gesture is detected
-                        message_text.value = f"This sign means '{gesture_detected}'."
+            # Perform inference when landmarks are detected
+            if landmarks is not None:
+                frame_skipped = 0  # Reset skip counter
+                preprocessed_landmarks = preprocess_landmarks(landmarks)
+
+                # Run the model prediction
+                predictions = model.predict(preprocessed_landmarks, verbose=0)
+                predicted_class = np.argmax(predictions, axis=1)[0]
+
+                # Map predicted class to a gesture name
+                gesture_map = {0: "Nothing", 1: "Hallo"}
+                gesture_detected = gesture_map.get(predicted_class, "Unknown Gesture")
+
+                # Add the detected gesture to the debounce buffer
+                debounce_buffer.append(gesture_detected)
+                if len(debounce_buffer) > debounce_threshold:
+                    debounce_buffer.pop(0)
+
+                # Check if the gesture has been consistent
+                if len(set(debounce_buffer)) == 1:  # All entries in the buffer are the same
+                    message_text.value = f"This sign means '{gesture_detected}'."
+                    ai_message.visible = True
+            else:
+                frame_skipped += 1
+                if frame_skipped > 5:  # Only add "No hand detected" if no hand is seen for 5 consecutive frames
+                    debounce_buffer.append("No hand detected")
+                    if len(debounce_buffer) > debounce_threshold:
+                        debounce_buffer.pop(0)
+
+                    if len(set(debounce_buffer)) == 1:  # Consistent "No hand detected"
+                        message_text.value = "No hand detected."
                         ai_message.visible = True
-                    else:
-                        ai_message.visible = False
-                        status_text.value = ""
 
-            # Encode the frame to base64
+            # Encode and update frame for UI
             _, buffer = cv2.imencode(".jpg", frame)
             img_base64 = base64.b64encode(buffer).decode("utf-8")
-
-            # Update the Image widget with the new frame
             img_widget.src_base64 = img_base64
             page.update()
 
