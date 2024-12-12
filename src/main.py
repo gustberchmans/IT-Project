@@ -21,7 +21,7 @@ def main(page: ft.Page):
     router.add_route("/difficulty1", lambda p: show_dif1_page(p, router))
     router.add_route("/difficulty2", lambda p: show_dif2_page(p, router))
     router.add_route("/account", lambda p: show_account_page(p, router))
-    router.add_route("/home", lambda p: show_home_page(p, router))
+    router.add_route("/home", lambda p: show_home_page(p, router ))
     
     page.title = "GebarenTool"
     page.theme_mode = ft.ThemeMode.LIGHT

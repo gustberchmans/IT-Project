@@ -2,6 +2,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from functools import lru_cache
 import os
+from datetime import datetime
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 service_account_path = os.path.join(current_dir, "../../serviceAccountKey.json")
@@ -28,6 +29,7 @@ def get_user_data(user_id):
 def set_current_user(user_id):
     global _current_user
     _current_user = user_id
+    
 
 def get_current_user():
     return _current_user
@@ -72,5 +74,93 @@ def add_score(user_id, score, quiz_id, total_questions):
         'timestamp': firestore.SERVER_TIMESTAMP,
         'total_questions': total_questions
     })
+
+def load_progress(user_id):
+    try:
+        progress_ref = db.collection('progress').document(user_id)
+        progress_doc = progress_ref.get()
+        
+        if progress_doc.exists:
+            return progress_doc.to_dict()
+        else:
+            progress_ref.set({
+                'difficulty1': 0,
+                'difficulty2': 0,
+                'difficulty3': 0
+            })
+            return {
+                'difficulty1': 0,
+                'difficulty2': 0,
+                'difficulty3': 0
+            }
+    except Exception as e:
+        print(f"Error loading progress: {e}")
+        return {
+            'difficulty1': 0,
+            'difficulty2': 0,
+            'difficulty3': 0
+        }
+
+
+# Functie om streak bij te werken
+def update_streak(user_id):
+    try:
+        streak_ref = db.collection('UserStreaks').document(user_id)
+        streak_doc = streak_ref.get()
+
+        if streak_doc.exists:
+            data = streak_doc.to_dict()
+            last_date = datetime.strptime(data.get('last_date', '2000-01-01'), '%Y-%m-%d').date()
+            current_date = datetime.now().date()
+            current_streak = data.get('streak', 0)
+
+            # Bereken de dagenverschil
+            days_difference = (current_date - last_date).days
+            if days_difference > 1:
+                current_streak = 0  # Reset streak
+            elif days_difference == 1:
+                current_streak += 1
+
+            # Update de streak in Firestore
+            streak_ref.update({
+                'streak': current_streak,
+                'last_date': current_date.strftime('%Y-%m-%d')
+            })
+
+            # Bereken de totale dagen sinds de eerste streak
+            total_days = (current_date - datetime.strptime(data.get('first_date', '2000-01-01'), '%Y-%m-%d').date()).days
+
+            return current_streak, total_days
+        else:
+            current_date = datetime.now().date()
+            streak_ref.set({
+                'streak': 0,
+                'last_date': current_date.strftime('%Y-%m-%d'),
+                'first_date': current_date.strftime('%Y-%m-%d')
+            })
+
+            return 0, 0  # Eerste keer voor de gebruiker
+    except Exception as e:
+        print(f"Error updating streak: {e}")
+        return 0, 0
+
+# Functie om de streak van een gebruiker op te halen
+def get_streak(user_id):
+    try:
+        # Haal de streakgegevens op van de gebruiker
+        streak_ref = db.collection('UserStreaks').document(user_id)
+        streak_doc = streak_ref.get()
+
+        if streak_doc.exists:
+            data = streak_doc.to_dict()
+            current_streak = data.get('streak', 0)
+            print(f"Current streak for {user_id}: {current_streak}")
+            return current_streak
+        else:
+            print(f"No streak data found for user {user_id}.")
+            return 0
+    except Exception as e:
+        print(f"Error getting streak: {e}")
+        return 0
 
   
