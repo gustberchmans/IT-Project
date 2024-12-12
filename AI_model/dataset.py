@@ -1,8 +1,5 @@
 import os
-import mediapipe as mp
 import numpy as np
-import cv2
-from tqdm import tqdm
 
 dir = './data'
 
@@ -12,16 +9,6 @@ if not os.path.exists(dir):
 
 data = []
 labels = []
-
-def extract_landmarks(results):
-    landmarks = []
-    if results.multi_hand_landmarks:
-        hand_landmarks = results.multi_hand_landmarks[0]
-        for lm in hand_landmarks.landmark:
-            landmarks.extend([lm.x, lm.y, lm.z])
-    else:
-        landmarks.extend([0] * 63)
-    return landmarks
 
 def get_gesture_classes():
     gesture_classes = []
@@ -47,7 +34,6 @@ if not gesture_classes:
 
 print(f"Found gesture classes: {gesture_classes}")
 
-
 for class_name in gesture_classes:
     class_path = os.path.join(dir, class_name)
     if not os.path.isdir(class_path):
@@ -55,7 +41,6 @@ for class_name in gesture_classes:
         continue
         
     print(f"\nProcessing class: {class_name}")
-    
     
     sequences = []
     for item in os.listdir(class_path):
@@ -67,23 +52,19 @@ for class_name in gesture_classes:
         print(f"No sequences found for class {class_name}")
         continue
     
-    
-    for sequence in tqdm(sequences, desc=f"Processing {class_name}"):
+    for sequence in sequences:
         sequence_path = os.path.join(class_path, sequence)
-        
         
         if not validate_sequence_directory(sequence_path):
             print(f"Skipping incomplete sequence: {sequence_path}")
             continue
             
         sequence_data = []
-
         
         for frame_num in range(30):
-            frame_path = os.path.join(sequence_path, str(frame_num) + '.npy')
+            frame_path = os.path.join(sequence_path, f"{frame_num}.npy")
             try:
                 frame_data = np.load(frame_path)
-                
                 if len(frame_data) in [63, 126]:  
                     
                     if len(frame_data) == 126:
@@ -94,13 +75,14 @@ for class_name in gesture_classes:
             except Exception as e:
                 print(f"Error loading {frame_path}: {e}")
                 continue
-
         
         if len(sequence_data) == 30:
             sequence_array = np.array(sequence_data)
             if sequence_array.shape == (30, 63):
                 data.append(sequence_array)
                 labels.append(class_name)
+            else:
+                print(f"Skipping sequence {sequence} - wrong shape: {sequence_array.shape}")
 
 
 if data and labels:

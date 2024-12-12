@@ -6,13 +6,14 @@ from collections import deque
 import time
 
 GESTURES = {
-    'huis',
+    'goed',
     'no_gesture'
 }
 
 HERHALINGEN = 30
 FRAMES = 30
-WAIT_TIME = 1
+WAIT_TIME = 1  
+
 
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(min_detection_confidence=0.7, max_num_hands=2)
@@ -38,18 +39,6 @@ for gesture_name in GESTURES:
             continue
             
         frame = cv2.flip(frame, 1)
-        
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = hands.process(rgb_frame)
-        
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-            
-            num_hands = len(results.multi_hand_landmarks)
-            cv2.putText(frame, f"Hands detected: {num_hands}", (10, 110),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
-        
         cv2.putText(frame, f"Ready to collect {gesture_name}", (10, 30),
                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         cv2.putText(frame, "Press 'q' to start", (10, 70),
@@ -91,8 +80,10 @@ for gesture_name in GESTURES:
                     for lm in hand_landmarks.landmark:
                         landmarks.extend([lm.x, lm.y, lm.z])
             
-            np.save(os.path.join(sequence_dir, f"{idx}.npy"),
-                   landmarks if landmarks else np.zeros(63))
+            if len(landmarks) in [63, 126]:  
+                np.save(os.path.join(sequence_dir, f"{idx}.npy"), landmarks)
+            else:
+                print(f"Skipping frame {idx} - unexpected shape: {len(landmarks)}")
         
         print(f"Sequence {sequence} completed")
         
