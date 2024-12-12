@@ -6,11 +6,11 @@ from collections import deque
 import time
 
 GESTURES = {
-    'goed',
+    'hallo',
     'no_gesture'
 }
 
-HERHALINGEN = 30
+HERHALINGEN = 100
 FRAMES = 30
 WAIT_TIME = 1  
 

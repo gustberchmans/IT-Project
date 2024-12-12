@@ -33,6 +33,7 @@ data = data_normalized.reshape(samples, timesteps, features)
 label_encoder = LabelEncoder()
 labels = label_encoder.fit_transform(labels)
 labels = to_categorical(labels)
+num_classes = labels.shape[1]
 print(f"Labels shape: {labels.shape}")
 
 X_train_val, X_test, y_train_val, y_test = train_test_split(

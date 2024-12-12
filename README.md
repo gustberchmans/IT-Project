@@ -2,7 +2,7 @@ To use the project follow these steps:
 
 1. Open Visual Studio Code
 2. Open the project
-3. Run in the terminal: pip install flet opencv-python mediapipe numpy firebase-admin
+3. Run in the terminal: pip install flet opencv-python mediapipe numpy firebase-admin tenserflow
    <br>pip install 'protobuf>=4.25.3,<5.0.0,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5'
 4. Install IP Webcame on an android phone and set the settings to:
 - Main camera: front camera
@@ -22,3 +22,9 @@ Github Copilot
 https://chatgpt.com/share/672b510d-d684-800b-afa2-a7bb171f265f
 https://chatgpt.com/share/6747208d-b308-800b-a58e-20c0dca7ff4c
 https://chatgpt.com/share/675976e9-f714-800b-976d-2b5cc7fedcd4
+https://chatgpt.com/share/675ab584-57ac-800b-aadf-b1c46a6d6adf
+https://chatgpt.com/share/675ab5fd-876c-800b-bfdb-77968f703f75
+
+
+Iben:
+pip install protobuf==3.20.*
