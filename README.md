@@ -1,3 +1,21 @@
+# IT Project - gebarentaaltool
+
+<div>
+  <h2>Introduction and About Us</h2>
+   <p>Welcome to our repository for IT Project, this project was given by our profs from the Erasmus University College Brussels.</p>
+   <p>Our team consits of a Product Owner Gust Berchmans and 4 developers: Iben Vanthournout, Jente Tavernier, Senne Clauwaert, Bilal Belkasem.</p>
+   <h2>The Problem</h2> 
+   <p>People who use SMOG or wish to learn it face significant barriers in communication and accessibility due to the lack of engaging tools and real-time solutions. This limits their ability to connect with others in personal, educational, and professional contexts.</p>
+   <h2>Our Solution</h2>
+   <p>Our solution is a sign language translator app designed to support SMOG. It bridges the communication gap between signers and non-signers while offering an engaging way to learn SMOG.</p>
+   <p>Our app empowers users to:</p>
+   <ul>
+      <li>Translate gestures into text in real-time.</li>
+      <li>Learn SMOG interactively through tailored lessons.</li>
+      <li>Track their progress through gamified elements, including a statistics page showcasing milestones and achievements.</li>
+   </ul>
+   <h2>How to use our app</h2>
+
 To use the project follow these steps:
 
 1. Open Visual Studio Code
@@ -17,14 +35,35 @@ To use the project follow these steps:
 9. Install the flet app on your phone
 10. Add the ip address
 
+
+<h2>Resources</h2>
+
+
 Gust:
-Github Copilot
-https://chatgpt.com/share/672b510d-d684-800b-afa2-a7bb171f265f
-https://chatgpt.com/share/6747208d-b308-800b-a58e-20c0dca7ff4c
-https://chatgpt.com/share/675976e9-f714-800b-976d-2b5cc7fedcd4
-https://chatgpt.com/share/675ab584-57ac-800b-aadf-b1c46a6d6adf
-https://chatgpt.com/share/675ab5fd-876c-800b-bfdb-77968f703f75
+Github Copilot <br>
+https://chatgpt.com/share/672b510d-d684-800b-afa2-a7bb171f265f <br>
+https://chatgpt.com/share/6747208d-b308-800b-a58e-20c0dca7ff4c <br>
+https://chatgpt.com/share/675976e9-f714-800b-976d-2b5cc7fedcd4 <br>
+https://chatgpt.com/share/675ab584-57ac-800b-aadf-b1c46a6d6adf <br>
+https://chatgpt.com/share/675ab5fd-876c-800b-bfdb-77968f703f75 <br>
 
 
 Iben:
 pip install protobuf==3.20.*
+
+Jente:<br>
+Github Copilot <br>
+[https://www.tensorflow.org/guide/keras](https://www.tensorflow.org/api_docs/python/tf/keras/Model)<br>
+https://www.tensorflow.org/tutorials/quickstart/beginner<br>
+https://machinelearningmastery.com/tensorflow-tutorial-deep-learning-with-tf-keras/<br>
+https://keras.io/api/layers/recurrent_layers/lstm/<br>
+https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker/python<br>
+https://docs.opencv.org/3.4/dd/d43/tutorial_py_video_display.html<br>
+https://numpy.org/doc/stable/user/quickstart.html<br>
+https://keras.io/guides/sequential_model/
+https://keras.io/guides/training_with_built_in_methods/
+
+Used ChatGPT to fix Tensorflow model, but because of an image with model statistics I cannot upload the link <br>
+![image](https://github.com/user-attachments/assets/b81a4b51-c5b4-49ae-a1cc-3c19dc69a220)
+
+
