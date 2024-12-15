@@ -66,4 +66,8 @@ https://keras.io/guides/training_with_built_in_methods/
 Used ChatGPT to fix Tensorflow model, but because of an image with model statistics I cannot upload the link <br>
 ![image](https://github.com/user-attachments/assets/b81a4b51-c5b4-49ae-a1cc-3c19dc69a220)
 
+Senne:<br>
+https://firebase.google.com/<br>
+https://www.cursor.com/<br>
+
 
