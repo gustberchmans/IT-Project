@@ -30,7 +30,7 @@ To use the project follow these steps:
 - FPS Limit: 15
 5. Start server and copy ip
 6. Past ip in the python code
-7. Run: cd gebarentool && .\venv\Scripts\activate && flet run --android
+7. Run: python -m venv .venv && .\venv\Scripts\activate && cd src  && flet run --android
 8. Scan the QR code and copy the ip
 9. Install the flet app on your phone
 10. Add the ip address
