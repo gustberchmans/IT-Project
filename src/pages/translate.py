@@ -27,7 +27,7 @@ update_thread_running = False
 update_thread = None
 
 # IP Webcam URL
-ip_webcam_url = "http://192.168.0.130:8080/video"
+ip_webcam_url = "http://192.168.2.2:8080/video"
 
 def show_translate_page(page: ft.Page, router):
     global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message, camera_section

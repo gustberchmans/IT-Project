@@ -2,7 +2,7 @@ To use the project follow these steps:
 
 1. Open Visual Studio Code
 2. Open the project
-3. Run in the terminal: pip install flet opencv-python mediapipe numpy firebase-admin tenserflow
+3. Run in the terminal: pip install flet opencv-python mediapipe numpy firebase-admin tensorflow bcrypt
    <br>pip install 'protobuf>=4.25.3,<5.0.0,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5'
 4. Install IP Webcame on an android phone and set the settings to:
 - Main camera: front camera
