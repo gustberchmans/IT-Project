@@ -16,6 +16,10 @@ class Router:
         self.routes[route] = handler
 
     def navigate(self, route: str, **kwargs):
+        # Check if the requested route is the same as the current route
+        if self.current_route == route:
+            return  # Do not navigate to the same page
+
         matched_route, params = self.match_route(route)
         if not matched_route:
             raise ValueError(f"Route {route} not found")
