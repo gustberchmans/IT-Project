@@ -11,6 +11,7 @@ from pages.learn.difficulties.results import show_results_page
 from pages.learn.difficulties.d1l2 import show_d1l2_page
 from pages.learn.d1learn import show_d1learn_page
 from pages.learn.d2learn import show_d2learn_page
+from pages.learn.difficulties.d1l3 import show_d1l3_page
 
 
 def main(page: ft.Page):
@@ -24,6 +25,7 @@ def main(page: ft.Page):
     router.add_route("/difficulty2", lambda p: show_d2learn_page(p, router))
     router.add_route("/d1l1", lambda p: show_d1l1_page(p, router))
     router.add_route("/d1l2", lambda p: show_d1l2_page(p, router))
+    router.add_route("/d1l3", lambda p: show_d1l3_page(p, router))
     router.add_route("/account", lambda p: show_account_page(p, router))
     router.add_route("/home", lambda p: show_home_page(p, router ))
     
