@@ -439,19 +439,22 @@ def show_translate_page(page: ft.Page, router):
             print(f"Attempting to play video for gesture: {user_input_global}")
             
             video_found = False  # Track whether a matching video is found
-            for video_file in video_files:
-                video_file_name_without_extension = os.path.splitext(video_file)[0]
+            user_input_words = user_input_global.lower().split()  # Split input into words
 
-                # Compare the user input with the video file name (case insensitive)
-                if user_input_global.lower() == video_file_name_without_extension.lower():
-                    video_path = os.path.join(video_folder_path, video_file)
-                    print(f"Video path: {video_path}")
-                    play_video(video_path, page)
-                    video_found = True
-                    message_text.value = "Playing video..."
-                    ai_message.visible = True
-                    break
-            
+            for word in user_input_words:
+                for video_file in video_files:
+                    video_file_name_without_extension = os.path.splitext(video_file)[0]
+
+                    # Compare each word from the user input with the video file name (case insensitive)
+                    if word == video_file_name_without_extension.lower():
+                        video_path = os.path.join(video_folder_path, video_file)
+                        print(f"Video path: {video_path}")
+                        play_video(video_path, page)
+                        video_found = True
+                        message_text.value = "Playing video..."
+                        ai_message.visible = True
+                        break  # Exit the inner loop if a match is found
+
             if not video_found:
                 print(f"No matching video found for user input: {user_input_global}")
                 message_text.value = "No matching video found."
