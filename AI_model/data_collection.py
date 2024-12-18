@@ -10,7 +10,7 @@ GESTURES = {
     'no_gesture'
 }
 
-HERHALINGEN = 100
+HERHALINGEN = 30
 FRAMES = 30
 WAIT_TIME = 1  
 
@@ -60,7 +60,7 @@ for gesture_name in GESTURES:
             if not ret:
                 continue
                 
-            frame = cv2.flip(frame, 1)
+            # frame = cv2.flip(frame, 1)
             frame_buffer.append(frame.copy())
             frames_collected += 1
             
