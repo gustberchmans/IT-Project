@@ -83,23 +83,61 @@ def load_progress(user_id):
         if progress_doc.exists:
             return progress_doc.to_dict()
         else:
+            # Hier stellen we de structuur in met de verschillende levels voor elke difficulty
             progress_ref.set({
-                'difficulty1': 0,
-                'difficulty2': 0,
-                'difficulty3': 0
+                'difficulty1': {
+                    'd1l1': 0,
+                    'd1l2': 0,
+                    'd1l3': 0
+                },
+                'difficulty2': {
+                    'd2l1': 0,
+                    'd2l2': 0,
+                    'd2l3': 0
+                },
+                'difficulty3': {
+                    'd3l1': 0,
+                    'd3l2': 0,
+                    'd3l3': 0
+                }
             })
             return {
-                'difficulty1': 0,
-                'difficulty2': 0,
-                'difficulty3': 0
+                'difficulty1': {
+                    'd1l1': 0,
+                    'd1l2': 0,
+                    'd1l3': 0
+                },
+                'difficulty2': {
+                    'd2l1': 0,
+                    'd2l2': 0,
+                    'd2l3': 0
+                },
+                'difficulty3': {
+                    'd3l1': 0,
+                    'd3l2': 0,
+                    'd3l3': 0
+                }
             }
     except Exception as e:
         print(f"Error loading progress: {e}")
         return {
-            'difficulty1': 0,
-            'difficulty2': 0,
-            'difficulty3': 0
+            'difficulty1': {
+                'd1l1': 0,
+                'd1l2': 0,
+                'd1l3': 0
+            },
+            'difficulty2': {
+                'd2l1': 0,
+                'd2l2': 0,
+                'd2l3': 0
+            },
+            'difficulty3': {
+                'd3l1': 0,
+                'd3l2': 0,
+                'd3l3': 0
+            }
         }
+
 
 
 # Functie om streak bij te werken
