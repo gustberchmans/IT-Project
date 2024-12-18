@@ -70,4 +70,8 @@ Senne:<br>
 https://firebase.google.com/<br>
 https://www.cursor.com/<br>
 
+Bilal:<br>
+https://www.cursor.com
+https://flet.dev
+https://flet.dev/docs/
 
