@@ -9,7 +9,7 @@ from components.header import HeaderBar
 from components.nav_bar import NavBar
 import time
 import tensorflow as tf
-from tensorflow.keras.models import load_model
+from tensorflow.python.keras.models import load_model
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -27,14 +27,14 @@ update_thread_running = False
 update_thread = None
 
 # IP Webcam URL
-ip_webcam_url = "http://192.168.2.2:8080/video"
+ip_webcam_url = "http://10.2.88.111:8080/video"
 
 def show_translate_page(page: ft.Page, router):
     global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message, camera_section
 
     # Placeholder image if the camera is not accessible
     placeholder_image = np.zeros((480, 640, 3), dtype=np.uint8)
-    cv2.putText(placeholder_image, "Camera not available", (150, 230), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    #cv2.putText(placeholder_image, "Camera not available", (150, 230), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
     _, placeholder_buffer = cv2.imencode('.jpg', placeholder_image)
     placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
 
@@ -63,8 +63,8 @@ def show_translate_page(page: ft.Page, router):
     # Grey camera preview area (initially set to 400x400)
     camera_section = ft.Container(
         content=img_widget,
-        width=400,
-        height=400,  # Set initial height to 400
+        width=0,
+        height=0,  # Set initial height to 400
         border_radius=8,
         bgcolor=ft.colors.GREY_200,
         alignment=ft.alignment.center,
@@ -173,11 +173,6 @@ def show_translate_page(page: ft.Page, router):
             threading.Thread(target=update_frame, daemon=True).start()
 
     def extract_landmarks(results):
-        """
-        Extracts hand landmarks from MediaPipe results.
-        :param results: MediaPipe hand processing results
-        :return: Flattened array of hand landmarks or None if no hands detected
-        """
         if results.multi_hand_landmarks:
             for hand_landmarks in results.multi_hand_landmarks:
                 # Extract and flatten all 21 landmarks (x, y, z)
@@ -189,11 +184,6 @@ def show_translate_page(page: ft.Page, router):
         return None
 
     def preprocess_landmarks(landmarks):
-        """
-        Prepares landmarks for model input.
-        :param landmarks: Flattened landmarks array
-        :return: Preprocessed landmarks with the correct shape for the model
-        """
         # Normalize landmarks (optional, if required by the model)
         landmarks = np.array(landmarks)
         landmarks = landmarks / np.linalg.norm(landmarks)  # Normalize vector length
@@ -286,7 +276,6 @@ def show_translate_page(page: ft.Page, router):
                 print("Failed to open camera")
                 return
             start_update_thread()
-            print("Camera opened")
             # Make the camera preview bigger when recording
             camera_section.width = 400  # Keep the width same
             camera_section.height = 550  # Set height to 550 when recording
@@ -297,17 +286,16 @@ def show_translate_page(page: ft.Page, router):
             close_camera()
             stop_update_thread()
             # Set the black screen with "No video available" message
-            placeholder_image = np.zeros((400, 400, 3), dtype=np.uint8)  # 400x400 placeholder
-            #cv2.putText(placeholder_image, "Camera not available", (100, 180), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            placeholder_image = np.ones((400, 400, 3), dtype=np.uint8) *255  # 400x400 placeholder
+            cv2.putText(placeholder_image, "Camera not available", (100, 180), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             _, placeholder_buffer = cv2.imencode('.jpg', placeholder_image)
             placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
             img_widget.src_base64 = placeholder_base64
             # Revert to the original size of 400x400 when camera is closed
-            camera_section.width = 400
-            camera_section.height = 400  # Reset to 400x400
-            img_widget.width = 400
-            img_widget.height = 400  # Reset to 400x400
-            print("Camera closed")
+            camera_section.width = 0
+            camera_section.height = 0
+            img_widget.width = 0
+            img_widget.height = 0
             page.update()
 
     # Return the View object
