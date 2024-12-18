@@ -10,7 +10,7 @@ model2 = load_model('./models/Eerst_model.h5')
 model3 = load_model('./models/Goed_Fast_model.h5')
 
 actions = {
-    'Hello': ['no_gesture', 'Hello'],
+    'Hello': ['Hello', 'no_gesture'],
     'Eerst': ['Eerst', 'no_gesture'],
     'Goed': ['Goed', 'no_gesture']
 }

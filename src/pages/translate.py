@@ -45,7 +45,7 @@ for video_file in video_files:
 user_input_global = ""
 
 def show_translate_page(page: ft.Page, router):
-    global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message, user_message_text, camera_section
+    global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message, user_message_text, camera_section, using_ip_webcam
 
     # Placeholder image if the camera is not accessible
     placeholder_image = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -169,21 +169,35 @@ def show_translate_page(page: ft.Page, router):
 
     # Function to initialize the camera
     def open_camera():
-        global cap, ip_webcam_url
+        global cap, ip_webcam_url, using_ip_webcam
 
         # Attempt to open IP webcam first
         if ip_webcam_url:
+            print(f"Trying to access IP Webcam at {ip_webcam_url}...")
             cap = cv2.VideoCapture(ip_webcam_url)
-        
-        # Fallback to hardware webcam if IP webcam fails
-        if not cap or not cap.isOpened():
-            print("Failed to access IP Webcam. Trying hardware webcam...")
-            cap = cv2.VideoCapture(0)
 
-        if not cap.isOpened():
+            # Wait for the camera to open with a timeout
+            while not cap.isOpened():
+                    print("Timeout reached. Failed to access IP Webcam.")
+                    break
+
+            if cap.isOpened():
+                print("IP Webcam accessed successfully.")
+                using_ip_webcam = True
+                return True
+            else:
+                print("Failed to access IP Webcam. Trying hardware webcam...")
+
+        # Fallback to hardware webcam if IP webcam fails
+        print("Attempting to access hardware webcam...")
+        cap = cv2.VideoCapture(0)
+        if cap.isOpened():
+            print("Hardware webcam accessed successfully.")
+            using_ip_webcam = False
+            return True
+        else:
             print("Error: Could not access any camera.")
             return False
-        return True
 
     # Function to release the camera
     def close_camera():
@@ -240,7 +254,7 @@ def show_translate_page(page: ft.Page, router):
         while update_thread_running:
             if not cap or not cap.isOpened():
                 print("Camera feed not available")
-                time.sleep(1)
+                # time.sleep(1)
                 continue
 
             try:
@@ -259,8 +273,11 @@ def show_translate_page(page: ft.Page, router):
             last_frame_time = current_time
 
             # Flip the frame and convert to RGB
-            frame = cv2.flip(frame, 1)  # Horizontal flip
-            frame = cv2.flip(frame, -1)  # Vertical flip (optional)
+            if (not using_ip_webcam):
+                frame = cv2.flip(frame, 1)
+            else:
+                frame = cv2.flip(frame, 1)
+                frame = cv2.flip(frame, -1)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Process the frame with MediaPipe Hands
@@ -345,9 +362,10 @@ def show_translate_page(page: ft.Page, router):
     def toggle_camera(page):
         global cap, update_thread_running, video_playing, cameraClosed
         if not cap or not cap.isOpened():
-            if not open_camera():
-                print("Failed to open camera")
-                return
+            if open_camera():
+                print("Camera initialized successfully.")
+            else:
+                print("Error: Camera not accessible.")
             start_update_thread()
             # Make the camera preview bigger when recording
             camera_section.width = 400  # Keep the width same

@@ -1,15 +1,21 @@
 import firebase_admin
-from firebase_admin import credentials, firestore, auth
+from firebase_admin import credentials, firestore, auth, storage
 from functools import lru_cache
 import os
 from datetime import datetime
+from datetime import timedelta
+
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 service_account_path = os.path.join(current_dir, "../../serviceAccountKey.json")
 
+
+
 try:
     cred = credentials.Certificate(service_account_path)
-    firebase_admin.initialize_app(cred)
+    firebase_admin.initialize_app(cred, {
+        'storageBucket': 'it-projectv2.firebasestorage.app'  # Specify the storage bucket
+    })
     print("Firebase app initialized successfully.")
 except Exception as e:
     print(f"Error initializing Firebase app: {e}")
@@ -138,7 +144,38 @@ def load_progress(user_id):
             }
         }
 
+def update_progress(user_id, difficulty, level, progress):
+    """
+    Update the progress of a specific level for a user in Firestore.
+    
+    :param user_id: The ID of the user.
+    :param difficulty: The difficulty level (e.g., 'difficulty1', 'difficulty2', 'difficulty3').
+    :param level: The specific level within the difficulty (e.g., 'd1l1', 'd1l2').
+    :param progress: The progress to set (typically 0 or 1 for unfinished/finished).
+    """
+    try:
+        # Verkrijg het document van de gebruiker uit Firestore
+        progress_ref = db.collection('progress').document(user_id)
+        progress_doc = progress_ref.get()
+        
+        if progress_doc.exists:
+            # Haal de bestaande data op
+            data = progress_doc.to_dict()
 
+            # Update de voortgang van het specifieke level binnen de juiste difficulty
+            if difficulty in data:
+                data[difficulty][level] = progress
+            else:
+                # Als de difficulty nog niet bestaat, voeg dan een nieuwe toe
+                data[difficulty] = {level: progress}
+            
+            # Update het document in Firestore met de nieuwe data
+            progress_ref.update(data)
+            print(f"Progress for {difficulty} - {level} updated to {progress}")
+        else:
+            print(f"No data found for user {user_id}")
+    except Exception as e:
+        print(f"Error updating progress: {e}")
 
 # Functie om streak bij te werken
 def update_streak(user_id):
@@ -200,5 +237,40 @@ def get_streak(user_id):
     except Exception as e:
         print(f"Error getting streak: {e}")
         return 0
+
+from datetime import timedelta
+from firebase_admin import storage
+
+from datetime import timedelta
+from firebase_admin import storage
+
+def get_videos():
+    try:
+        bucket = storage.bucket()
+        blobs = bucket.list_blobs(prefix='videos/')  # Adjust prefix if needed
+        videos = []
+
+        seen_files = set()  # Track already processed video names
+
+        for blob in blobs:
+            # Exclude placeholder folders and ensure no duplicates
+            if not blob.name.endswith('/') and blob.name not in seen_files:
+                seen_files.add(blob.name)  # Add the file name to the seen set
+
+                # Generate a signed URL valid for 24 hours
+                url = blob.generate_signed_url(
+                    expiration=timedelta(seconds=86400),  # Valid for 24 hours
+                    method='GET'
+                )
+                videos.append(url)
+
+        print(videos)  # Debug: Print the generated URLs
+        return videos  # Return the list of URLs
+    except Exception as e:
+        print(f"Error getting videos: {e}")
+        return None  # Return None in case of an error
+
+
+
 
   

@@ -17,6 +17,17 @@ def create_difficulty_row(difficulty_name, router, progress=0, is_locked=False):
         width=400
     )
 
+def get_next_unfinished_lesson(progress_data):
+    """
+    Returns the path to the next unfinished lesson based on the user's progress.
+    """
+    for difficulty in ['difficulty1', 'difficulty2', 'difficulty3']:
+        for level in ['d1l1', 'd1l2', 'd1l3'] if difficulty == 'difficulty1' else ['d2l1', 'd2l2', 'd2l3'] if difficulty == 'difficulty2' else ['d3l1', 'd3l2', 'd3l3']:
+            if progress_data[difficulty][level] == 0:  # if the level is not completed
+                # return the path of the next unfinished level
+                return f"/{level}"
+    return None  # If all lessons are completed
+
 def show_home_page(page: ft.Page, router):
     page.clean()
     page.window_width = 400
@@ -25,7 +36,6 @@ def show_home_page(page: ft.Page, router):
     page.padding = 0  
 
     # Define user_id
-    
     user_id = get_current_user()
 
     # Haal de streak en totaal aantal dagen op
@@ -38,6 +48,9 @@ def show_home_page(page: ft.Page, router):
     # Haal de voortgang op
     progress_data = load_progress(user_id)
 
+    # Get the next unfinished lesson
+    next_lesson = get_next_unfinished_lesson(progress_data)
+    
     welcome_section = ft.Container(
         content=ft.Text(
             "Welcome,",
@@ -52,17 +65,19 @@ def show_home_page(page: ft.Page, router):
     progress_section = ft.Container(
         content=ft.Column([  
             ft.Text("Progress", size=24, weight=ft.FontWeight.BOLD),
-            create_difficulty_row("Difficulty 1", router, progress=progress_data["difficulty1"]["d1l1"]),
+            create_difficulty_row("Difficulty 1", router, progress=(progress_data["difficulty1"]["d1l1"]
+                      + progress_data["difficulty1"]["d1l2"]
+                      +progress_data["difficulty1"]["d1l3"])/3),
             create_difficulty_row("Difficulty 2", router, is_locked=True),
             create_difficulty_row("Difficulty 3", router, is_locked=True),
             ft.ElevatedButton(
                 "Resume",
-                on_click=lambda e: router.navigate("/resume"),
+                on_click=lambda e: router.navigate(next_lesson if next_lesson else "/home"),
                 style=ft.ButtonStyle(
                     shape=ft.RoundedRectangleBorder(radius=10),
                 )
             )
-        ]),
+        ]), 
         padding=20,
         bgcolor=ft.colors.WHITE,
         border_radius=10,
