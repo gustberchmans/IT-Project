@@ -40,27 +40,23 @@ h11==0.14.0
 h5py==3.12.1
 httpcore==1.0.7
 httplib2==0.22.0
-httpx==0.28.0
-idna==3.10
 jax==0.4.35
 jaxlib==0.4.35
-Jinja2==3.1.4
-joblib==1.4.2
 keras==3.7.0
+matplotlib==3.9.2
+mediapipe==0.10.18
 kiwisolver==1.4.7
 libclang==18.1.1
 Markdown==3.7
 markdown-it-py==3.0.0
 MarkupSafe==3.0.2
-matplotlib==3.9.2
 mdurl==0.1.2
-mediapipe==0.10.18
 ml-dtypes==0.4.1
 mpmath==1.3.0
 msgpack==1.1.0
 namex==0.0.8
 networkx==3.4.2
-numpy==2.0.2
+numpy>=1.23,<2.0  # Specificeer een compatibele versie van numpy
 oauthlib==3.2.2
 opencv-contrib-python==4.10.0.84
 opencv-python==4.10.0.84
@@ -70,8 +66,8 @@ packaging==24.2
 panda==0.3.1
 pandas==2.2.3
 pillow==11.0.0
-proto-plus==1.25.0
-protobuf==5.29.1
+# proto-plus==1.25.0
+protobuf>=3.20.2,<5
 psutil==6.1.0
 py-cpuinfo==9.0.0
 pyasn1==0.6.1
