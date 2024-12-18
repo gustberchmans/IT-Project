@@ -320,7 +320,8 @@ def show_translate_page(page: ft.Page, router):
                 sequence.append(landmarks)
                 perform_inference(frame)  # Pass frame as an argument
             else:
-                print(f"Landmarks onjuist of niet gedetecteerd: {landmarks}")
+                #print(f"Landmarks onjuist of niet gedetecteerd: {landmarks}")
+                pass
 
             # Encodeer en werk het frame bij voor de UI
             _, buffer = cv2.imencode(".jpg", frame)
