@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import Dense, Dropout
-from tensorflow.python.keras.layers import LSTMV1 as LSTM
+from tensorflow.python.keras.layers import LSTMV2 as LSTM
 #from keras.layers.normalization.batch_normalization import BatchNormalization
 from tensorflow.python.keras.optimizer_v2.adam import Adam
 from tensorflow.python.keras.regularizers import L2
@@ -32,59 +32,30 @@ data = data_normalized.reshape(samples, timesteps, features)
 
 label_encoder = LabelEncoder()
 labels = label_encoder.fit_transform(labels)
+labels = labels.reshape(-1, 1)
 labels = to_categorical(labels)
-num_classes = labels.shape[1]
 print(f"Labels shape: {labels.shape}")
 
-X_train_val, X_test, y_train_val, y_test = train_test_split(
-    data, labels, test_size=0.1, random_state=50, stratify=labels.argmax(axis=1)
-)
-
-X_train, X_val, y_train, y_val = train_test_split(
-    X_train_val, y_train_val, test_size=0.2, random_state=50, stratify=y_train_val.argmax(axis=1)
+X_train, X_test, y_train, y_test = train_test_split(
+    data, labels, test_size=0.5, random_state=50, stratify=labels.argmax(axis=1)
 )
 
 print(f"Train set: {X_train.shape[0]} samples")
-print(f"Validation set: {X_val.shape[0]} samples")
 print(f"Test set: {X_test.shape[0]} samples")
 
+    
 model = Sequential([
-     LSTM(
-        128, 
-        return_sequences=True, 
-        activation='tanh', 
-        recurrent_activation='sigmoid', 
-        input_shape=(timesteps, features),
-        kernel_regularizer=tf.keras.regularizers.l2(0.001)  
-    ),
-    Dropout(0.3), 
-    
-    LSTM(
-        256, 
-        return_sequences=True, 
-        activation='tanh', 
-        recurrent_activation='sigmoid', 
-        kernel_regularizer=tf.keras.regularizers.l2(0.001)  
-    ),
-    Dropout(0.3), 
-    
-    LSTM(
-        128, 
-        return_sequences=False, 
-        activation='tanh', 
-        recurrent_activation='sigmoid', 
-        kernel_regularizer=tf.keras.regularizers.l2(0.001)  
-    ),
+    LSTM(32, return_sequences=True, activation='relu', kernel_regularizer=L2(0.01), input_shape=(timesteps, features)),
     Dropout(0.3),
-    
-    Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01)),
+    LSTM(64, return_sequences=True, activation='relu', kernel_regularizer=L2(0.01)),
     Dropout(0.3),
-    
-    Dense(64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01)),
+    LSTM(32, return_sequences=False, activation='relu', kernel_regularizer=L2(0.01)),
     Dropout(0.3),
+    Dense(32, activation='relu'),
     
     Dense(labels.shape[1], activation='softmax')
 ])
+
 
 optimizer = Adam(learning_rate=0.001)
 model.compile(
@@ -95,7 +66,8 @@ model.compile(
 
 early_stopping = EarlyStopping(
     monitor='val_loss',
-    patience=10,
+    patience=5,
+    verbose=1,
     restore_best_weights=True
 )
 
@@ -109,19 +81,19 @@ reduce_lr = ReduceLROnPlateau(
 checkpoint = ModelCheckpoint(
     'best_model.h5',
     monitor='val_loss',
+    save_weights_only=True,
     save_best_only=True
 )
 
 history = model.fit(
     X_train, 
     y_train,
-    epochs=100,
-    batch_size=64,
-    validation_data=(X_val, y_val),
+    epochs=500, 
+    batch_size=128,
+    validation_split=0.5,
     callbacks=[early_stopping, reduce_lr, checkpoint]
 )
 
-# Save trained model
 model_dir = './models'
 os.makedirs(model_dir, exist_ok=True)
 model_path = os.path.join(model_dir, 'my_model.h5')

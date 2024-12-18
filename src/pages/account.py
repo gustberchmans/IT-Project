@@ -40,7 +40,7 @@ def show_account_page(page: ft.Page, router):
                 'firstname': new_firstname,
                 'lastname': new_lastname,
                 'email': new_email,
-                'password': hashed_password
+                'password': hashed_password.decode('utf-8')
             })
 
             # Update the user data in memory
@@ -48,23 +48,35 @@ def show_account_page(page: ft.Page, router):
                 'firstname': new_firstname,
                 'lastname': new_lastname,
                 'email': new_email,
-                'password': hashed_password
+                'password': hashed_password.decode('utf-8')
             })
 
             show_success_snackbar(page, "Profile updated successfully!")
         except Exception as e:
             show_error_snackbar(page, f"Error updating profile: {str(e)}")
 
+    # Add back button in header
+    back_button = ft.IconButton(
+        icon=ft.icons.ARROW_BACK,
+        on_click=handle_back,
+        icon_color=ft.colors.BLACK
+    )
+
+    # Update the profile section styling
     name_field = ft.TextField(
         value=f"{user_data['firstname']} {user_data['lastname']}", 
         prefix_icon=ft.icons.PERSON,
-        label="Full Name"
+        label="Full Name",
+        border=ft.InputBorder.UNDERLINE,
+        height=50,
     )
 
     email_field = ft.TextField(
         value=user_data['email'],
         prefix_icon=ft.icons.EMAIL,
-        label="Email"
+        label="Email",
+        border=ft.InputBorder.UNDERLINE,
+        height=50,
     )
 
     password_field = ft.TextField(
@@ -72,43 +84,83 @@ def show_account_page(page: ft.Page, router):
         prefix_icon=ft.icons.LOCK,
         password=True,
         can_reveal_password=True,
-        label="New Password"
+        label="New Password",
+        border=ft.InputBorder.UNDERLINE,
+        height=50,
     )
 
     profile_section = ft.Container(
         content=ft.Column([
-            HeaderBar(router),
-            ft.Text(f"{user_data['firstname']} {user_data['lastname']}", size=24, weight=ft.FontWeight.BOLD),
-            ft.Icon(ft.icons.PERSON_PIN, size=80),
-            name_field,
-            email_field,
-            password_field,
-            ft.ElevatedButton(
-                "Save profile",
-                on_click=handle_save_profile,
-                style=ft.ButtonStyle(
-                    color=ft.colors.WHITE,
-                    bgcolor=ft.colors.BLUE,
-                    shape=ft.RoundedRectangleBorder(radius=10),
-                ),
+            # Custom header with back button
+            ft.Container(
+                content=ft.Row([
+                    back_button,
+                    ft.Text("Profile", size=24, weight=ft.FontWeight.BOLD),
+                ], alignment=ft.MainAxisAlignment.START),
+                padding=ft.padding.only(bottom=20),
             ),
-            ft.ElevatedButton(
-                "Logout",
-                icon=ft.icons.LOGOUT,
-                on_click=handle_logout,
-                bgcolor="red",
-                color=ft.colors.WHITE
+            # Profile picture with network image
+            ft.Container(
+                content=ft.CircleAvatar(
+                    foreground_image_url="https://picsum.photos/200",
+                    radius=75,
+                ),
+                alignment=ft.alignment.center,
+                padding=ft.padding.only(bottom=20),
+            ),
+            # Form fields in a card
+            ft.Card(
+                content=ft.Container(
+                    content=ft.Column([
+                        name_field,
+                        email_field,
+                        password_field,
+                    ], spacing=10),
+                    padding=20,
+                ),
+                elevation=0,
+            ),
+
+            # Centered Save Profile button
+            ft.Container(
+                content=ft.ElevatedButton(
+                    "Save profile",
+                    on_click=handle_save_profile,
+                    style=ft.ButtonStyle(
+                        color=ft.colors.WHITE,
+                        bgcolor=ft.colors.BLUE,
+                        shape=ft.RoundedRectangleBorder(radius=25),
+                    ),
+                    width=300,  # Made button wider
+                ),
+                alignment=ft.alignment.center,
+                padding=ft.padding.only(top=20),
             ),
         ]),
         padding=20,
-        alignment=ft.alignment.center,
     )
+
+    # Create a stack to overlay the logout button
+    page_content = ft.Stack([
+        profile_section,
+        # Logout button positioned in top-right corner
+        ft.Container(
+            content=ft.IconButton(
+                icon=ft.icons.LOGOUT,
+                icon_color=ft.colors.RED_500,
+                on_click=handle_logout,
+                tooltip="Logout",  # Added tooltip for better UX
+            ),
+            alignment=ft.alignment.top_right,
+            padding=ft.padding.only(top=20, right=20),
+        ),
+    ])
 
     nav_bar = NavBar(router=router, active_route="/account")
 
     return ft.View(
         route="/account",
-        controls=[profile_section, nav_bar],
+        controls=[page_content, nav_bar],
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         padding=0
