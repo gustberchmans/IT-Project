@@ -16,6 +16,7 @@ try:
     firebase_admin.initialize_app(cred, {
         'storageBucket': 'it-projectv2.firebasestorage.app'  # Specify the storage bucket
     })
+    print("------------------------------------------")
     print("Firebase app initialized successfully.")
 except Exception as e:
     print(f"Error initializing Firebase app: {e}")
@@ -23,6 +24,7 @@ except Exception as e:
 try:
     db = firestore.client()
     print("Firestore client initialized successfully.")
+    print("------------------------------------------")
 except Exception as e:
     print(f"Error initializing Firestore client: {e}")
 
@@ -171,11 +173,17 @@ def update_progress(user_id, difficulty, level, progress):
             
             # Update het document in Firestore met de nieuwe data
             progress_ref.update(data)
+            print("------------------------------------------")
             print(f"Progress for {difficulty} - {level} updated to {progress}")
+            print("------------------------------------------")
         else:
+            print("------------------------------------------")
             print(f"No data found for user {user_id}")
+            print("------------------------------------------")
     except Exception as e:
+        print("------------------------------------------")
         print(f"Error updating progress: {e}")
+        print("------------------------------------------")
 
 # Functie om streak bij te werken
 def update_streak(user_id):
@@ -263,11 +271,13 @@ def get_videos():
                     method='GET'
                 )
                 videos.append(url)
-
+        print("------------------------------------------")
         print(videos)  # Debug: Print the generated URLs
         return videos  # Return the list of URLs
     except Exception as e:
+        print("------------------------------------------")
         print(f"Error getting videos: {e}")
+        print("------------------------------------------")
         return None  # Return None in case of an error
 
 
