@@ -1,5 +1,6 @@
 import flet as ft
-from services.firebase import add_score, get_current_user
+from services.firebase import add_score, get_current_user, update_progress
+
 
 # Sample quiz questions
 quiz_data = [
@@ -100,7 +101,11 @@ def show_d1l1_page(page: ft.Page, router):
 
     # Function for the results
     def display_results():
-        print("display_results called")  # Debugging om te controleren of deze functie wordt aangeroepen
+        print("display_results called")
+        # Set progress_difficulty1 d1l1 to 1
+
+        user_id = get_current_user()
+        
         page.clean()  # Maak de pagina leeg
 
         # Save the score to Firebase
@@ -138,6 +143,7 @@ def show_d1l1_page(page: ft.Page, router):
 
     def go_to_results():
         user_id = get_current_user()
+        update_progress(user_id, "difficulty1", "d1l1", 1)
         print(f"User ID: {user_id}, Score: {score}")
         total_questions = {len(quiz_data)}  # Print the user_id and score
         add_score(user_id, score, "difficulty1", total_questions)

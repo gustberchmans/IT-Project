@@ -1,5 +1,5 @@
 import flet as ft
-from services.firebase import add_score, get_current_user
+from services.firebase import add_score, get_current_user, update_progress
 
 # Placeholder data for video and corresponding words
 video_data = [
@@ -97,6 +97,8 @@ def show_d1l2_page(page: ft.Page, router):
 
     # Function to display the final results
     def display_results():
+        user_id = get_current_user()
+        update_progress(user_id, "difficulty1", "d1l2", 1)
         router.navigate(f"/results/{score}/{len(video_data)}")
         page.clean()
         user_id = get_current_user()

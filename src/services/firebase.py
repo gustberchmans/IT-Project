@@ -138,7 +138,38 @@ def load_progress(user_id):
             }
         }
 
+def update_progress(user_id, difficulty, level, progress):
+    """
+    Update the progress of a specific level for a user in Firestore.
+    
+    :param user_id: The ID of the user.
+    :param difficulty: The difficulty level (e.g., 'difficulty1', 'difficulty2', 'difficulty3').
+    :param level: The specific level within the difficulty (e.g., 'd1l1', 'd1l2').
+    :param progress: The progress to set (typically 0 or 1 for unfinished/finished).
+    """
+    try:
+        # Verkrijg het document van de gebruiker uit Firestore
+        progress_ref = db.collection('progress').document(user_id)
+        progress_doc = progress_ref.get()
+        
+        if progress_doc.exists:
+            # Haal de bestaande data op
+            data = progress_doc.to_dict()
 
+            # Update de voortgang van het specifieke level binnen de juiste difficulty
+            if difficulty in data:
+                data[difficulty][level] = progress
+            else:
+                # Als de difficulty nog niet bestaat, voeg dan een nieuwe toe
+                data[difficulty] = {level: progress}
+            
+            # Update het document in Firestore met de nieuwe data
+            progress_ref.update(data)
+            print(f"Progress for {difficulty} - {level} updated to {progress}")
+        else:
+            print(f"No data found for user {user_id}")
+    except Exception as e:
+        print(f"Error updating progress: {e}")
 
 # Functie om streak bij te werken
 def update_streak(user_id):

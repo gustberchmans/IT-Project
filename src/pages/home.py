@@ -52,7 +52,9 @@ def show_home_page(page: ft.Page, router):
     progress_section = ft.Container(
         content=ft.Column([  
             ft.Text("Progress", size=24, weight=ft.FontWeight.BOLD),
-            create_difficulty_row("Difficulty 1", router, progress=progress_data["difficulty1"]["d1l1"]),
+            create_difficulty_row("Difficulty 1", router, progress=(progress_data["difficulty1"]["d1l1"]
+                      + progress_data["difficulty1"]["d1l2"]
+                      +progress_data["difficulty1"]["d1l3"])/3),
             create_difficulty_row("Difficulty 2", router, is_locked=True),
             create_difficulty_row("Difficulty 3", router, is_locked=True),
             ft.ElevatedButton(
