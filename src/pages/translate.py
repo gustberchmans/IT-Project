@@ -81,7 +81,7 @@ def show_translate_page(page: ft.Page, router):
     img_widget = ft.Image(
         src_base64=placeholder_base64, 
         width=400,
-        height=400,  # Set initial height to 400
+        height=500,  # Set initial height to 400
         fit=ft.ImageFit.COVER,
         border_radius=8,
     )
@@ -197,7 +197,7 @@ def show_translate_page(page: ft.Page, router):
         global cap, ip_webcam_url, using_ip_webcam
 
         # Attempt to open IP webcam first
-        if not ip_webcam_url:
+        if ip_webcam_url:
             print(f"Trying to access IP Webcam at {ip_webcam_url}...")
             cap = cv2.VideoCapture(ip_webcam_url)
 
@@ -400,9 +400,9 @@ def show_translate_page(page: ft.Page, router):
             start_update_thread()
             # Make the camera preview bigger when recording
             camera_section.width = 400  # Keep the width same
-            camera_section.height = 400  # Set height to 550 when recording
+            camera_section.height = 500  # Set height to 550 when recording
             img_widget.width = 400  # Keep the width same
-            img_widget.height = 400  # Set height to 550 when recording
+            img_widget.height = 500  # Set height to 550 when recording
             page.update()
             
             cameraClosed = False
@@ -410,7 +410,7 @@ def show_translate_page(page: ft.Page, router):
             close_camera()
             stop_update_thread()
             # Set the black screen with "No video available" message
-            placeholder_image = np.ones((400, 400, 3), dtype=np.uint8) * 255  # 400x400 placeholder
+            placeholder_image = np.ones((400, 500, 3), dtype=np.uint8) * 255  # 400x400 placeholder
             cv2.putText(placeholder_image, "Camera not available", (100, 180), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             _, placeholder_buffer = cv2.imencode('.jpg', placeholder_image)
             placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
@@ -553,9 +553,9 @@ def perform_inference(frame):
 
                 if len(set(debounce_buffer)) == 1:  # All items in the buffer are the same
                     if label == 'no_gesture' and confidence < 0.6:
-                        message_text.value = f"Dit gebaar betekent '{label}' met {confidence:.2f} confidence."
+                        message_text.value = f"Gebaar: {label}, {confidence:.2f} confidence."
                     else:
-                        message_text.value = f"Dit gebaar betekent '{label}' met {confidence:.2f} confidence."
+                        message_text.value = f"Gebaar: {label}, {confidence:.2f} confidence."
                     ai_message.visible = True
                 else:
                     ai_message.visible = False
