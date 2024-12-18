@@ -254,13 +254,13 @@ def show_translate_page(page: ft.Page, router):
         while update_thread_running:
             if not cap or not cap.isOpened():
                 print("Camera feed not available")
-                # time.sleep(1)
                 continue
 
             try:
-              ret, frame = cap.read()
-            except:
-              pass
+                ret, frame = cap.read()
+            except Exception as e:
+                print(f"Error reading frame: {e}")
+                continue
             
             if not ret:
                 print("Failed to capture image")
@@ -273,38 +273,61 @@ def show_translate_page(page: ft.Page, router):
             last_frame_time = current_time
 
             # Flip the frame and convert to RGB
-            if (not using_ip_webcam):
+            if not using_ip_webcam:
                 frame = cv2.flip(frame, 1)
             else:
                 frame = cv2.flip(frame, 1)
                 frame = cv2.flip(frame, -1)
+            
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Process the frame with MediaPipe Hands
             results = hands.process(rgb_frame)
-            landmarks = extract_landmarks(results)
 
-            # Perform inference when landmarks are detected
-            if landmarks is not None:
-                frame_skipped = 0  # Reset skip counter
-                preprocessed_landmarks = preprocess_landmarks(landmarks)
+            if results.multi_hand_landmarks:
+                landmarks = extract_landmarks(results)
+                if landmarks is not None:
+                    frame_skipped = 0  # Reset skip counter
+                    preprocessed_landmarks = preprocess_landmarks(landmarks)
 
-                # Run the model prediction
-                predictions = model.predict(preprocessed_landmarks, verbose=0)
-                predicted_class = np.argmax(predictions, axis=1)[0]
+                    # Run the model prediction
+                    predictions = model.predict(preprocessed_landmarks, verbose=0)
+                    predicted_class = np.argmax(predictions, axis=1)[0]
 
-                # Map predicted class to a gesture name
-                gesture_map = {0: "Nothing", 1: "Hallo"}
-                gesture_detected = gesture_map.get(predicted_class, "Unknown Gesture")
+                    # Map predicted class to a gesture name
+                    gesture_map = {0: "Nothing", 1: "Hallo"}
+                    gesture_detected = gesture_map.get(predicted_class, "Unknown Gesture")
 
-                # Add the detected gesture to the debounce buffer
-                debounce_buffer.append(gesture_detected)
-                if len(debounce_buffer) > debounce_threshold:
-                    debounce_buffer.pop(0)
+                    # Add the detected gesture to the debounce buffer
+                    debounce_buffer.append(gesture_detected)
+                    if len(debounce_buffer) > debounce_threshold:
+                        debounce_buffer.pop(0)
+
+                    # Check if a gesture is consistent enough to update the UI
+                    if len(set(debounce_buffer)) == 1:
+                        if gesture_detected != "No hand detected":
+                            message_text.value = f"Gesture: {gesture_detected}"
+                            ai_message.visible = True
+                        else:
+                            message_text.value = "No hand detected."
+                            ai_message.visible = True
+                        page.update()
+
+                else:
+                    frame_skipped += 1
+                    if frame_skipped > 5:  # Only add "No hand detected" if no hand is seen for 5 consecutive frames
+                        debounce_buffer.append("No hand detected")
+                        if len(debounce_buffer) > debounce_threshold:
+                            debounce_buffer.pop(0)
+
+                        if len(set(debounce_buffer)) == 1:  # Consistent "No hand detected"
+                            message_text.value = "No hand detected."
+                            ai_message.visible = True
+
             else:
-                # Handle case when no landmarks (hand) are detected
+                # Handle the case where no hand is detected
                 frame_skipped += 1
-                if frame_skipped > 5:  # Only add "No hand detected" if no hand is seen for 5 consecutive frames
+                if frame_skipped > 5:
                     debounce_buffer.append("No hand detected")
                     if len(debounce_buffer) > debounce_threshold:
                         debounce_buffer.pop(0)
@@ -317,6 +340,8 @@ def show_translate_page(page: ft.Page, router):
             _, buffer = cv2.imencode(".jpg", frame)
             img_base64 = base64.b64encode(buffer).decode("utf-8")
             img_widget.src_base64 = img_base64
+            
+            time.sleep(0.01)  # Sleep for 10ms to throttle the loop
             page.update()
 
     def play_video(video_path):
