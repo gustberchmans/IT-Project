@@ -10,16 +10,34 @@ import tensorflow as tf
 from tensorflow.python.keras.models import load_model
 from components.nav_bar import NavBar
 from components.header import HeaderBar
+from collections import deque
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
+hands = mp_hands.Hands(
+    min_detection_confidence=0.75, 
+    min_tracking_confidence=0.75,
+    max_num_hands=2,
+)
 mp_drawing = mp.solutions.drawing_utils
 
-model_path = os.path.join(os.path.dirname(__file__), "../models/Hello_model.h5")
+model1 = load_model(os.path.join(os.path.dirname(__file__), "../models/Hello_Fast_model.h5"))
+model2 = load_model(os.path.join(os.path.dirname(__file__), "../models/Eerst_model.h5"))
+model3 = load_model(os.path.join(os.path.dirname(__file__), "../models/Goed_Fast_model.h5"))
 
-# Load the model
-model = load_model(model_path)
+actions = {
+    'Hello': ['Hello', 'no_gesture'],
+    'Eerst': ['Eerst', 'no_gesture'],
+    'Goed': ['Goed', 'no_gesture']
+}
+
+models_info = {
+    'Hello': {'model': model1, 'features': 63},
+    'Eerst': {'model': model2, 'features': 63},
+    'Goed': {'model': model3, 'features': 63}
+}
+
+sequence = deque(maxlen=30)
 
 # Global variables for camera and thread control
 cap = None
@@ -43,6 +61,13 @@ for video_file in video_files:
     
 # Define global variable for user input
 user_input_global = ""
+
+# Lock to protect shared resources between threads
+camera_lock = threading.Lock()
+
+# Debouncing buffer for consistent gesture detection
+debounce_buffer = []
+debounce_threshold = 3  # Minimum consecutive consistent frames to update message
 
 def show_translate_page(page: ft.Page, router):
     global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message, user_message_text, camera_section, using_ip_webcam
@@ -172,16 +197,18 @@ def show_translate_page(page: ft.Page, router):
         global cap, ip_webcam_url, using_ip_webcam
 
         # Attempt to open IP webcam first
-        if ip_webcam_url:
+        if not ip_webcam_url:
             print(f"Trying to access IP Webcam at {ip_webcam_url}...")
             cap = cv2.VideoCapture(ip_webcam_url)
 
             # Wait for the camera to open with a timeout
             while not cap.isOpened():
-                    print("Timeout reached. Failed to access IP Webcam.")
-                    break
+                print("Timeout reached. Failed to access IP Webcam.")
+                cap.release()
+                cap = None
+                break
 
-            if cap.isOpened():
+            if cap and cap.isOpened():
                 print("IP Webcam accessed successfully.")
                 using_ip_webcam = True
                 return True
@@ -206,6 +233,26 @@ def show_translate_page(page: ft.Page, router):
             cap.release()
             cap = None
 
+    def preprocess_landmarks(landmarks):
+        if landmarks is None:
+            return None
+        
+        landmarks = np.array(landmarks)
+        
+        # Check if the landmarks have the correct size (63 per hand)
+        if len(landmarks) != 63:  # For one hand, we expect 63 values (21 landmarks * 3 values per landmark)
+            print(f"Warning: Unexpected landmark size {len(landmarks)}. Expected 63 values for one hand.")
+            return None
+        
+        # Normalize landmarks (optional, if required by the model)
+        landmarks = landmarks / np.linalg.norm(landmarks)  # Normalize vector length
+        
+        # Expand dimensions to match model input (1, 10, 63)
+        sequence = np.tile(landmarks, (10, 1))  # Replicate landmarks 10 times to create a sequence
+        sequence = np.expand_dims(sequence, axis=0)  # Shape should be (1, 10, 63)
+        
+        return sequence
+
     # Function to stop the update thread
     def stop_update_thread():
         global update_thread_running, video_playing
@@ -221,39 +268,24 @@ def show_translate_page(page: ft.Page, router):
             threading.Thread(target=update_frame, daemon=True).start()
 
     def extract_landmarks(results):
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                # Extract and flatten all 21 landmarks (x, y, z)
-                landmarks = [
-                    [lm.x, lm.y, lm.z] for lm in hand_landmarks.landmark
-                ]
-                flattened_landmarks = np.array(landmarks).flatten()
-                return flattened_landmarks
-        return None
-
-    def preprocess_landmarks(landmarks):
-        # Normalize landmarks (optional, if required by the model)
-        landmarks = np.array(landmarks)
-        landmarks = landmarks / np.linalg.norm(landmarks)  # Normalize vector length
-
-        # Expand dimensions to match model input (1, 10, 63)
-        # Since the model expects a sequence of 10 frames, replicate landmarks
-        sequence = np.tile(landmarks, (10, 1))
-        sequence = np.expand_dims(sequence, axis=0)
-        return sequence
+        if not results.multi_hand_landmarks:
+            return None
+        landmarks = []
+        # Verwerk alleen de eerste hand
+        hand_landmarks = results.multi_hand_landmarks[0]
+        for lm in hand_landmarks.landmark:
+            landmarks.extend([lm.x, lm.y, lm.z])
+        return landmarks
 
     def update_frame():
-        global update_thread_running, video_playing  # Ensure global variables are used
-        last_frame_time = 0
-        frame_skipped = 0  # Frame skip counter for throttling inference
+        global cap, update_thread_running, video_playing, using_ip_webcam, img_widget  # Ensure global variables are used, using_ip_webcam, img_widget
 
-        # Debouncing buffer for consistent gesture detection
-        debounce_buffer = []
-        debounce_threshold = 3  # Minimum consecutive consistent frames to update message
+        last_frame_time = 0
 
         while update_thread_running:
             if not cap or not cap.isOpened():
-                print("Camera feed not available")
+                print("Camera feed niet beschikbaar")
+                # time.sleep(0.5)
                 continue
 
             try:
@@ -263,7 +295,7 @@ def show_translate_page(page: ft.Page, router):
                 continue
             
             if not ret:
-                print("Failed to capture image")
+                print("Fout bij het vastleggen van afbeelding")
                 continue
 
             # Throttle frame processing to 20 FPS for display (50ms delay between frames)
@@ -272,71 +304,25 @@ def show_translate_page(page: ft.Page, router):
                 continue
             last_frame_time = current_time
 
-            # Flip the frame and convert to RGB
             if not using_ip_webcam:
                 frame = cv2.flip(frame, 1)
             else:
                 frame = cv2.flip(frame, 1)
                 frame = cv2.flip(frame, -1)
             
+            frame = make_square(frame)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-            # Process the frame with MediaPipe Hands
             results = hands.process(rgb_frame)
+            landmarks = extract_landmarks(results)
 
-            if results.multi_hand_landmarks:
-                landmarks = extract_landmarks(results)
-                if landmarks is not None:
-                    frame_skipped = 0  # Reset skip counter
-                    preprocessed_landmarks = preprocess_landmarks(landmarks)
-
-                    # Run the model prediction
-                    predictions = model.predict(preprocessed_landmarks, verbose=0)
-                    predicted_class = np.argmax(predictions, axis=1)[0]
-
-                    # Map predicted class to a gesture name
-                    gesture_map = {0: "Nothing", 1: "Hallo"}
-                    gesture_detected = gesture_map.get(predicted_class, "Unknown Gesture")
-
-                    # Add the detected gesture to the debounce buffer
-                    debounce_buffer.append(gesture_detected)
-                    if len(debounce_buffer) > debounce_threshold:
-                        debounce_buffer.pop(0)
-
-                    # Check if a gesture is consistent enough to update the UI
-                    if len(set(debounce_buffer)) == 1:
-                        if gesture_detected != "No hand detected":
-                            message_text.value = f"Gesture: {gesture_detected}"
-                            ai_message.visible = True
-                        else:
-                            message_text.value = "No hand detected."
-                            ai_message.visible = True
-                        page.update()
-
-                else:
-                    frame_skipped += 1
-                    if frame_skipped > 5:  # Only add "No hand detected" if no hand is seen for 5 consecutive frames
-                        debounce_buffer.append("No hand detected")
-                        if len(debounce_buffer) > debounce_threshold:
-                            debounce_buffer.pop(0)
-
-                        if len(set(debounce_buffer)) == 1:  # Consistent "No hand detected"
-                            message_text.value = "No hand detected."
-                            ai_message.visible = True
-
+            # Voer inferentie uit wanneer landmerken worden gedetecteerd
+            if landmarks is not None and len(landmarks) == 63:
+                sequence.append(landmarks)
+                perform_inference(frame)  # Pass frame as an argument
             else:
-                # Handle the case where no hand is detected
-                frame_skipped += 1
-                if frame_skipped > 5:
-                    debounce_buffer.append("No hand detected")
-                    if len(debounce_buffer) > debounce_threshold:
-                        debounce_buffer.pop(0)
+                print(f"Landmarks onjuist of niet gedetecteerd: {landmarks}")
 
-                    if len(set(debounce_buffer)) == 1:  # Consistent "No hand detected"
-                        message_text.value = "No hand detected."
-                        ai_message.visible = True
-
-            # Encode and update frame for UI (in case you need to display it)
+            # Encodeer en werk het frame bij voor de UI
             _, buffer = cv2.imencode(".jpg", frame)
             img_base64 = base64.b64encode(buffer).decode("utf-8")
             img_widget.src_base64 = img_base64
@@ -394,9 +380,9 @@ def show_translate_page(page: ft.Page, router):
             start_update_thread()
             # Make the camera preview bigger when recording
             camera_section.width = 400  # Keep the width same
-            camera_section.height = 500  # Set height to 500 when recording
+            camera_section.height = 400  # Set height to 550 when recording
             img_widget.width = 400  # Keep the width same
-            img_widget.height = 500  # Set height to 500 when recording
+            img_widget.height = 400  # Set height to 550 when recording
             page.update()
             
             cameraClosed = False
@@ -404,7 +390,7 @@ def show_translate_page(page: ft.Page, router):
             close_camera()
             stop_update_thread()
             # Set the black screen with "No video available" message
-            placeholder_image = np.ones((400, 400, 3), dtype=np.uint8) *255  # 400x400 placeholder
+            placeholder_image = np.ones((400, 400, 3), dtype=np.uint8) * 255  # 400x400 placeholder
             cv2.putText(placeholder_image, "Camera not available", (100, 180), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             _, placeholder_buffer = cv2.imencode('.jpg', placeholder_image)
             placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
@@ -466,3 +452,87 @@ def on_page_unload():
 # Call `on_page_unload()` during page navigation or exit
 def unload_page(page):
     page.on_unload = on_page_unload
+
+def make_square(frame):
+    height, width, _ = frame.shape
+    if height > width:
+        delta = height - width
+        top = delta // 2
+        bottom = delta - top
+        frame = frame[top:height-bottom, 0:width]
+    elif width > height:
+        delta = width - height
+        left = delta // 2
+        right = delta - left
+        frame = frame[0:height, left:width-right]
+    return frame
+
+def perform_inference(frame):
+    global sequence, models_info, actions, debounce_buffer, debounce_threshold, message_text, ai_message
+
+    if len(sequence) == 30:
+        sequence_array = np.array(sequence)
+
+        # Controleer de vorm van de sequence_array
+        if sequence_array.shape != (30, 63):
+            print(f"Waarschuwing: sequence-vorm is {sequence_array.shape}. Verwacht (30, 63).")
+            return
+
+        predictions = {}
+        for model_name, info in models_info.items():
+            model = info['model']
+            expected_features = info['features']
+
+            if expected_features == 63:
+                single_hand_landmarks = sequence_array.reshape(1, 30, 63)
+                pred = model.predict(single_hand_landmarks, verbose=0)[0]
+            elif expected_features == 126:
+                input_data_full = sequence_array.reshape(1, 30, 126)
+                pred = model.predict(input_data_full, verbose=0)[0]
+            else:
+                print(f"Model {model_name} heeft een onverwachte grootte van kenmerken.")
+                continue
+
+            pred_idx = np.argmax(pred)
+            confidence = pred[pred_idx]
+            label = actions[model_name][pred_idx]
+            predictions[model_name] = (label, confidence)
+
+            y_offset = 30
+            for model_name, (label, confidence) in predictions.items():
+                if confidence > 0.7:
+                    color = (0, 255, 0) 
+                elif confidence > 0.4:
+                    color = (0, 255, 255)  
+                else:
+                    color = (0, 0, 255) 
+
+                cv2.putText(frame, f'{model_name}: {label} ({confidence:.2f})', 
+                            (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2, cv2.LINE_AA)
+                y_offset += 30
+
+                # Find the prediction with the highest confidence
+                best_prediction = max(predictions.items(), key=lambda x: x[1][1])
+                # Filter out 'no_gesture' and find the best prediction with the highest confidence
+                filtered_predictions = {k: v for k, v in predictions.items() if v[0] != 'no_gesture'}
+                if filtered_predictions:
+                    best_prediction = max(filtered_predictions.items(), key=lambda x: x[1][1])
+                else:
+                    best_prediction = max(predictions.items(), key=lambda x: x[1][1])
+
+                label, confidence = best_prediction[1]
+
+                # Debouncing to prevent flickering in predictions
+                debounce_buffer.append(label)
+                if len(debounce_buffer) > debounce_threshold:
+                    debounce_buffer.pop(0)
+
+                if len(set(debounce_buffer)) == 1:  # All items in the buffer are the same
+                    if label == 'no_gesture' and confidence < 0.6:
+                        message_text.value = f"Dit gebaar betekent '{label}' met {confidence:.2f} confidence."
+                    else:
+                        message_text.value = f"Dit gebaar betekent '{label}' met {confidence:.2f} confidence."
+                    ai_message.visible = True
+                else:
+                    ai_message.visible = False
+                label, confidence = best_prediction[1]
