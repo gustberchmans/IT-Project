@@ -81,7 +81,7 @@ def show_translate_page(page: ft.Page, router):
     img_widget = ft.Image(
         src_base64=placeholder_base64, 
         width=400,
-        height=400,  # Set initial height to 400
+        height=500,  # Set initial height to 400
         fit=ft.ImageFit.COVER,
         border_radius=8,
     )
@@ -197,7 +197,7 @@ def show_translate_page(page: ft.Page, router):
         global cap, ip_webcam_url, using_ip_webcam
 
         # Attempt to open IP webcam first
-        if not ip_webcam_url:
+        if ip_webcam_url:
             print(f"Trying to access IP Webcam at {ip_webcam_url}...")
             cap = cv2.VideoCapture(ip_webcam_url)
 
@@ -320,7 +320,8 @@ def show_translate_page(page: ft.Page, router):
                 sequence.append(landmarks)
                 perform_inference(frame)  # Pass frame as an argument
             else:
-                print(f"Landmarks onjuist of niet gedetecteerd: {landmarks}")
+                #print(f"Landmarks onjuist of niet gedetecteerd: {landmarks}")
+                pass
 
             # Encodeer en werk het frame bij voor de UI
             _, buffer = cv2.imencode(".jpg", frame)
@@ -330,13 +331,11 @@ def show_translate_page(page: ft.Page, router):
             time.sleep(0.01)  # Sleep for 10ms to throttle the loop
             page.update()
 
-    def play_video(video_path):
+    def play_video(video_path, page):
+        global video_playing  # Declare the flag as global
+        
         print(f"Playing video: {video_path}")
         
-        # Set the video window size to 400x500
-        cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("Video", 400, 500)
-
         # Check if the video exists or not
         cap_video = cv2.VideoCapture(video_path)
 
@@ -344,30 +343,52 @@ def show_translate_page(page: ft.Page, router):
             # If no video is found, display a black screen
             print("No video available, displaying a black screen.")
             black_screen = np.zeros((500, 400, 3), dtype=np.uint8)
-            while True:
-                cv2.imshow('Video', black_screen)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-            cv2.destroyAllWindows()
+            _, black_buffer = cv2.imencode('.jpg', black_screen)
+            black_base64 = base64.b64encode(black_buffer).decode('utf-8')
+            img_widget.src_base64 = black_base64
+
+            # Set container size to 400x500 for consistency
+            camera_section.width = 400
+            camera_section.height = 500
+            page.update()
             return
+
+        # Set the container size to 400x500 at the start of video playback
+        camera_section.width = 400
+        camera_section.height = 500
+        img_widget.width = 400
+        img_widget.height = 500
+        page.update()
 
         while cap_video.isOpened():
             ret, frame = cap_video.read()
             if not ret:
                 break
 
-            # Resize video frame to fit within 400x500 if necessary
+            # Resize video frame to fit within 400x500
             frame = cv2.resize(frame, (400, 500))
 
-            # Display the frame
-            cv2.imshow('Video', frame)
+            # Encode the frame into base64
+            _, buffer = cv2.imencode(".jpg", frame)
+            frame_base64 = base64.b64encode(buffer).decode('utf-8')
 
-            # Press 'q' to exit
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            # Update the img_widget with the new frame
+            img_widget.src_base64 = frame_base64
+            page.update()
+
+            # Allow for video playback to stop by pressing 'q' or user controls
+            if video_playing and cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
         cap_video.release()
-        cv2.destroyAllWindows()
+        video_playing = False  # Reset the flag once the video ends
+
+        # Reset the container size to indicate no video feed
+        camera_section.width = 0
+        camera_section.height = 0
+        img_widget.width = 0
+        img_widget.height = 0
+        page.update()
 
     # Toggle camera: Open/Close camera when button is pressed
     def toggle_camera(page):
@@ -380,9 +401,9 @@ def show_translate_page(page: ft.Page, router):
             start_update_thread()
             # Make the camera preview bigger when recording
             camera_section.width = 400  # Keep the width same
-            camera_section.height = 400  # Set height to 550 when recording
+            camera_section.height = 500  # Set height to 550 when recording
             img_widget.width = 400  # Keep the width same
-            img_widget.height = 400  # Set height to 550 when recording
+            img_widget.height = 500  # Set height to 550 when recording
             page.update()
             
             cameraClosed = False
@@ -390,7 +411,7 @@ def show_translate_page(page: ft.Page, router):
             close_camera()
             stop_update_thread()
             # Set the black screen with "No video available" message
-            placeholder_image = np.ones((400, 400, 3), dtype=np.uint8) * 255  # 400x400 placeholder
+            placeholder_image = np.ones((400, 500, 3), dtype=np.uint8) * 255  # 400x400 placeholder
             cv2.putText(placeholder_image, "Camera not available", (100, 180), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             _, placeholder_buffer = cv2.imencode('.jpg', placeholder_image)
             placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
@@ -412,28 +433,32 @@ def show_translate_page(page: ft.Page, router):
         user_message.controls[0].visible = True  # Make the user message visible
         page.update()
         user_input_global = user_input  # Store the input in the global variable
-        
+
         if not video_playing:
             video_playing = True  # Set flag to prevent replay
             print(f"Attempting to play video for gesture: {user_input_global}")
             
-            # Iterate over the video files
+            video_found = False  # Track whether a matching video is found
             for video_file in video_files:
-                # Remove the '.mp4' extension for the comparison
                 video_file_name_without_extension = os.path.splitext(video_file)[0]
-                
-                # Compare the user input (gesture) with the video file name without extension
+
+                # Compare the user input with the video file name (case insensitive)
                 if user_input_global.lower() == video_file_name_without_extension.lower():
-                    # Construct the full video path by adding back the '.mp4' extension
                     video_path = os.path.join(video_folder_path, video_file)
                     print(f"Video path: {video_path}")
-                    play_video(video_path)
-                    video_playing = False
+                    play_video(video_path, page)
+                    video_found = True
+                    message_text.value = "Playing video..."
+                    ai_message.visible = True
                     break
-                else:
-                    video_playing = False
-        return user_input
-
+            
+            if not video_found:
+                print(f"No matching video found for user input: {user_input_global}")
+                message_text.value = "No matching video found."
+                ai_message.visible = True
+                page.update()
+            
+            video_playing = False  # Reset the flag after attempting to play
 
     # Return the View object
     return ft.View(
@@ -529,9 +554,9 @@ def perform_inference(frame):
 
                 if len(set(debounce_buffer)) == 1:  # All items in the buffer are the same
                     if label == 'no_gesture' and confidence < 0.6:
-                        message_text.value = f"Dit gebaar betekent '{label}' met {confidence:.2f} confidence."
+                        message_text.value = f"Gebaar: {label}, {confidence:.2f} confidence."
                     else:
-                        message_text.value = f"Dit gebaar betekent '{label}' met {confidence:.2f} confidence."
+                        message_text.value = f"Gebaar: {label}, {confidence:.2f} confidence."
                     ai_message.visible = True
                 else:
                     ai_message.visible = False
