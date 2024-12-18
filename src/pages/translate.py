@@ -5,11 +5,11 @@ import threading
 import numpy as np
 import base64
 import mediapipe as mp
-from components.header import HeaderBar
-from components.nav_bar import NavBar
 import time
 import tensorflow as tf
 from tensorflow.python.keras.models import load_model
+from components.nav_bar import NavBar
+from components.header import HeaderBar
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -26,15 +26,29 @@ cap = None
 update_thread_running = False
 update_thread = None
 
+video_playing = False
+cameraClosed = True
+
 # IP Webcam URL
 ip_webcam_url = "http://10.2.88.111:8080/video"
 
+# Path to your video files folder
+video_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "video")
+video_folder_path = os.path.normpath(video_folder_path)
+video_files = [f for f in os.listdir(video_folder_path) if f.endswith(".mp4")]
+
+print("Video files in the folder:")
+for video_file in video_files:
+    print(video_file)
+    
+# Define global variable for user input
+user_input_global = ""
+
 def show_translate_page(page: ft.Page, router):
-    global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message, camera_section
+    global cap, update_thread_running, update_thread, img_widget, status_text, message_text, ai_message, user_message_text, camera_section
 
     # Placeholder image if the camera is not accessible
     placeholder_image = np.zeros((480, 640, 3), dtype=np.uint8)
-    #cv2.putText(placeholder_image, "Camera not available", (150, 230), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
     _, placeholder_buffer = cv2.imencode('.jpg', placeholder_image)
     placeholder_base64 = base64.b64encode(placeholder_buffer).decode('utf-8')
 
@@ -49,7 +63,7 @@ def show_translate_page(page: ft.Page, router):
 
     # At the start of show_translate_page, create a Text control for the message
     message_text = ft.Text("", size=14, color=ft.colors.BLACK)
-    
+
     # Create the AI message container with the dynamic text
     ai_message = ft.Container(
         content=message_text,
@@ -58,6 +72,24 @@ def show_translate_page(page: ft.Page, router):
         padding=ft.padding.all(15),
         margin=ft.margin.only(left=20, right=80),
         visible=False,  # Hide initially until there's a message
+    )
+
+    # User message text widget
+    user_message_text = ft.Text("", size=14, color=ft.colors.BLACK)
+
+    # User message container aligned to the right
+    user_message = ft.Row(
+        controls=[ 
+            ft.Container(
+                content=user_message_text,
+                bgcolor=ft.colors.GREEN_50,
+                border_radius=10,
+                padding=ft.padding.all(15),
+                margin=ft.margin.only(top=10),
+                visible=False,  # Hide initially until there's input
+            )
+        ],
+        alignment=ft.MainAxisAlignment.END,  # Align container to the right
     )
 
     # Grey camera preview area (initially set to 400x400)
@@ -86,6 +118,7 @@ def show_translate_page(page: ft.Page, router):
                         text_style=ft.TextStyle(
                             color=ft.colors.BLACK,
                         ),
+                        on_submit=lambda e: send_user_message(e.control.value),
                     ),
                     bgcolor=ft.colors.GREY_200,
                     border_radius=25,
@@ -124,6 +157,7 @@ def show_translate_page(page: ft.Page, router):
             HeaderBar(router),
             camera_section,
             ai_message,
+            user_message,
             status_text,
             ft.Container(expand=True),
             input_section,
@@ -160,7 +194,7 @@ def show_translate_page(page: ft.Page, router):
 
     # Function to stop the update thread
     def stop_update_thread():
-        global update_thread_running
+        global update_thread_running, video_playing
         update_thread_running = False
         if update_thread is not None:
             update_thread.join()
@@ -195,7 +229,7 @@ def show_translate_page(page: ft.Page, router):
         return sequence
 
     def update_frame():
-        global update_thread_running
+        global update_thread_running, video_playing  # Ensure global variables are used
         last_frame_time = 0
         frame_skipped = 0  # Frame skip counter for throttling inference
 
@@ -209,20 +243,24 @@ def show_translate_page(page: ft.Page, router):
                 time.sleep(1)
                 continue
 
-            ret, frame = cap.read()
+            try:
+              ret, frame = cap.read()
+            except:
+              pass
+            
             if not ret:
                 print("Failed to capture image")
                 continue
 
-            # Throttle frame processing to 20 FPS for display
+            # Throttle frame processing to 20 FPS for display (50ms delay between frames)
             current_time = time.time()
             if current_time - last_frame_time < 0.05:  # ~20 FPS
                 continue
             last_frame_time = current_time
 
             # Flip the frame and convert to RGB
-            frame = cv2.flip(frame, 1)
-            frame = cv2.flip(frame, -1)
+            frame = cv2.flip(frame, 1)  # Horizontal flip
+            frame = cv2.flip(frame, -1)  # Vertical flip (optional)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Process the frame with MediaPipe Hands
@@ -246,12 +284,8 @@ def show_translate_page(page: ft.Page, router):
                 debounce_buffer.append(gesture_detected)
                 if len(debounce_buffer) > debounce_threshold:
                     debounce_buffer.pop(0)
-
-                # Check if the gesture has been consistent
-                if len(set(debounce_buffer)) == 1:  # All entries in the buffer are the same
-                    message_text.value = f"This sign means '{gesture_detected}'."
-                    ai_message.visible = True
             else:
+                # Handle case when no landmarks (hand) are detected
                 frame_skipped += 1
                 if frame_skipped > 5:  # Only add "No hand detected" if no hand is seen for 5 consecutive frames
                     debounce_buffer.append("No hand detected")
@@ -262,15 +296,54 @@ def show_translate_page(page: ft.Page, router):
                         message_text.value = "No hand detected."
                         ai_message.visible = True
 
-            # Encode and update frame for UI
+            # Encode and update frame for UI (in case you need to display it)
             _, buffer = cv2.imencode(".jpg", frame)
             img_base64 = base64.b64encode(buffer).decode("utf-8")
             img_widget.src_base64 = img_base64
             page.update()
 
+    def play_video(video_path):
+        print(f"Playing video: {video_path}")
+        
+        # Set the video window size to 400x500
+        cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Video", 400, 500)
+
+        # Check if the video exists or not
+        cap_video = cv2.VideoCapture(video_path)
+
+        if not cap_video.isOpened():
+            # If no video is found, display a black screen
+            print("No video available, displaying a black screen.")
+            black_screen = np.zeros((500, 400, 3), dtype=np.uint8)
+            while True:
+                cv2.imshow('Video', black_screen)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+            cv2.destroyAllWindows()
+            return
+
+        while cap_video.isOpened():
+            ret, frame = cap_video.read()
+            if not ret:
+                break
+
+            # Resize video frame to fit within 400x500 if necessary
+            frame = cv2.resize(frame, (400, 500))
+
+            # Display the frame
+            cv2.imshow('Video', frame)
+
+            # Press 'q' to exit
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        cap_video.release()
+        cv2.destroyAllWindows()
+
     # Toggle camera: Open/Close camera when button is pressed
     def toggle_camera(page):
-        global cap, update_thread_running
+        global cap, update_thread_running, video_playing, cameraClosed
         if not cap or not cap.isOpened():
             if not open_camera():
                 print("Failed to open camera")
@@ -278,10 +351,12 @@ def show_translate_page(page: ft.Page, router):
             start_update_thread()
             # Make the camera preview bigger when recording
             camera_section.width = 400  # Keep the width same
-            camera_section.height = 550  # Set height to 550 when recording
+            camera_section.height = 500  # Set height to 500 when recording
             img_widget.width = 400  # Keep the width same
-            img_widget.height = 550  # Set height to 550 when recording
+            img_widget.height = 500  # Set height to 500 when recording
             page.update()
+            
+            cameraClosed = False
         else:
             close_camera()
             stop_update_thread()
@@ -297,6 +372,39 @@ def show_translate_page(page: ft.Page, router):
             img_widget.width = 0
             img_widget.height = 0
             page.update()
+            
+            cameraClosed = True
+
+    # Handle user input and display user message
+    def send_user_message(user_input):
+        global user_input_global, video_playing  # Declare that we are using the global variable
+        print(user_input)
+        user_message_text.value = user_input  # Update the text content
+        user_message.controls[0].visible = True  # Make the user message visible
+        page.update()
+        user_input_global = user_input  # Store the input in the global variable
+        
+        if not video_playing:
+            video_playing = True  # Set flag to prevent replay
+            print(f"Attempting to play video for gesture: {user_input_global}")
+            
+            # Iterate over the video files
+            for video_file in video_files:
+                # Remove the '.mp4' extension for the comparison
+                video_file_name_without_extension = os.path.splitext(video_file)[0]
+                
+                # Compare the user input (gesture) with the video file name without extension
+                if user_input_global.lower() == video_file_name_without_extension.lower():
+                    # Construct the full video path by adding back the '.mp4' extension
+                    video_path = os.path.join(video_folder_path, video_file)
+                    print(f"Video path: {video_path}")
+                    play_video(video_path)
+                    video_playing = False
+                    break
+                else:
+                    video_playing = False
+        return user_input
+
 
     # Return the View object
     return ft.View(
@@ -305,7 +413,7 @@ def show_translate_page(page: ft.Page, router):
         bgcolor=ft.colors.WHITE,
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
-    )
+    )  
 
 # Ensure the camera is closed when navigating away from the page
 def on_page_unload():
