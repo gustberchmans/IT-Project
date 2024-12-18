@@ -1,15 +1,21 @@
 import firebase_admin
-from firebase_admin import credentials, firestore, auth
+from firebase_admin import credentials, firestore, auth, storage
 from functools import lru_cache
 import os
 from datetime import datetime
+from datetime import timedelta
+
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 service_account_path = os.path.join(current_dir, "../../serviceAccountKey.json")
 
+
+
 try:
     cred = credentials.Certificate(service_account_path)
-    firebase_admin.initialize_app(cred)
+    firebase_admin.initialize_app(cred, {
+        'storageBucket': 'it-projectv2.firebasestorage.app'  # Specify the storage bucket
+    })
     print("Firebase app initialized successfully.")
 except Exception as e:
     print(f"Error initializing Firebase app: {e}")
@@ -231,5 +237,40 @@ def get_streak(user_id):
     except Exception as e:
         print(f"Error getting streak: {e}")
         return 0
+
+from datetime import timedelta
+from firebase_admin import storage
+
+from datetime import timedelta
+from firebase_admin import storage
+
+def get_videos():
+    try:
+        bucket = storage.bucket()
+        blobs = bucket.list_blobs(prefix='videos/')  # Adjust prefix if needed
+        videos = []
+
+        seen_files = set()  # Track already processed video names
+
+        for blob in blobs:
+            # Exclude placeholder folders and ensure no duplicates
+            if not blob.name.endswith('/') and blob.name not in seen_files:
+                seen_files.add(blob.name)  # Add the file name to the seen set
+
+                # Generate a signed URL valid for 24 hours
+                url = blob.generate_signed_url(
+                    expiration=timedelta(seconds=86400),  # Valid for 24 hours
+                    method='GET'
+                )
+                videos.append(url)
+
+        print(videos)  # Debug: Print the generated URLs
+        return videos  # Return the list of URLs
+    except Exception as e:
+        print(f"Error getting videos: {e}")
+        return None  # Return None in case of an error
+
+
+
 
   
