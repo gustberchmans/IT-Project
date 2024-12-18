@@ -48,6 +48,18 @@ def show_home_page(page: ft.Page, router):
     # Haal de voortgang op
     progress_data = load_progress(user_id)
 
+    # Check if Difficulty 1 and Difficulty 2 are completed
+    is_difficulty1_complete = (
+        progress_data["difficulty1"]["d1l1"] == 1 and
+        progress_data["difficulty1"]["d1l2"] == 1 and
+        progress_data["difficulty1"]["d1l3"] == 1
+    )
+    is_difficulty2_complete = (
+        progress_data["difficulty2"]["d2l1"] == 1 and
+        progress_data["difficulty2"]["d2l2"] == 1 and
+        progress_data["difficulty2"]["d2l3"] == 1
+    )
+
     # Get the next unfinished lesson
     next_lesson = get_next_unfinished_lesson(progress_data)
     
@@ -65,11 +77,35 @@ def show_home_page(page: ft.Page, router):
     progress_section = ft.Container(
         content=ft.Column([  
             ft.Text("Progress", size=24, weight=ft.FontWeight.BOLD),
-            create_difficulty_row("Difficulty 1", router, progress=(progress_data["difficulty1"]["d1l1"]
-                      + progress_data["difficulty1"]["d1l2"]
-                      +progress_data["difficulty1"]["d1l3"])/3),
-            create_difficulty_row("Difficulty 2", router, is_locked=True),
-            create_difficulty_row("Difficulty 3", router, is_locked=True),
+            create_difficulty_row(
+                "Difficulty 1", 
+                router, 
+                progress=(
+                    progress_data["difficulty1"]["d1l1"] +
+                    progress_data["difficulty1"]["d1l2"] +
+                    progress_data["difficulty1"]["d1l3"]
+                ) / 3
+            ),
+            create_difficulty_row(
+                "Difficulty 2", 
+                router, 
+                progress=(
+                    progress_data["difficulty2"]["d2l1"] +
+                    progress_data["difficulty2"]["d2l2"] +
+                    progress_data["difficulty2"]["d2l3"]
+                ) / 3,
+                is_locked=not is_difficulty1_complete  # Unlock Difficulty 2 if Difficulty 1 is complete
+            ),
+            create_difficulty_row(
+                "Difficulty 3", 
+                router, 
+                progress=(
+                    progress_data["difficulty3"]["d3l1"] +
+                    progress_data["difficulty3"]["d3l2"] +
+                    progress_data["difficulty3"]["d3l3"]
+                ) / 3,
+                is_locked=not is_difficulty2_complete  # Unlock Difficulty 3 if Difficulty 2 is complete
+            ),
             ft.ElevatedButton(
                 "Resume",
                 on_click=lambda e: router.navigate(next_lesson if next_lesson else "/home"),

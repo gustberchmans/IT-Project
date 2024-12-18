@@ -4,7 +4,7 @@ import flet as ft
 from services.firebase import add_score, get_current_user, get_videos, update_progress
 import urllib
 
-def show_d1l2_page(page: ft.Page, router):
+def show_d1l3_page(page: ft.Page, router):
     page.clean()
 
     video_index = 0  # Start at the first video
@@ -102,7 +102,7 @@ def show_d1l2_page(page: ft.Page, router):
     # Function to display the final results
     def display_results():
         user_id = get_current_user()
-        update_progress(user_id, "difficulty1", "d1l2", 1)
+        update_progress(user_id, "difficulty1", "d1l3", 1)
         router.navigate(f"/results/{score}/{len(video_data)}")
         page.clean()
         user_id = get_current_user()
