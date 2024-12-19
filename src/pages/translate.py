@@ -12,6 +12,11 @@ from components.nav_bar import NavBar
 from components.header import HeaderBar
 from collections import deque
 
+if tf.config.list_physical_devices('GPU'):
+    print("GPU is available.")
+else:
+    print("GPU is not available.")
+
 # Set the GPU device for the model
 physical_devices = tf.config.list_physical_devices('GPU')
 if physical_devices:
@@ -91,12 +96,12 @@ def show_translate_page(page: ft.Page, router):
     )
 
     # At the start of show_translate_page, create a Text control for the message
-    message_text = ft.Text("", size=14, color=ft.Colors.BLACK)
+    message_text = ft.Text("", size=14, color=ft.colors.BLACK)
 
     # Create the AI message container with the dynamic text
     ai_message = ft.Container(
         content=message_text,
-        bgcolor=ft.Colors.BLUE_50,
+        bgcolor=ft.colors.BLUE_50,
         border_radius=10,
         padding=ft.padding.all(15),
         margin=ft.margin.only(left=20, right=80),
@@ -104,14 +109,14 @@ def show_translate_page(page: ft.Page, router):
     )
 
     # User message text widget
-    user_message_text = ft.Text("", size=14, color=ft.Colors.BLACK)
+    user_message_text = ft.Text("", size=14, color=ft.colors.BLACK)
 
     # User message container aligned to the right
     user_message = ft.Row(
         controls=[ 
             ft.Container(
                 content=user_message_text,
-                bgcolor=ft.Colors.GREEN_50,
+                bgcolor=ft.colors.GREEN_50,
                 border_radius=10,
                 padding=ft.padding.all(15),
                 margin=ft.margin.only(top=10),
@@ -127,7 +132,7 @@ def show_translate_page(page: ft.Page, router):
         width=0,
         height=0,  # Set initial height to 400
         border_radius=8,
-        bgcolor=ft.Colors.GREY_200,
+        bgcolor=ft.colors.GREY_200,
         alignment=ft.alignment.center,
         margin=ft.margin.symmetric(vertical=20),
     )
@@ -143,24 +148,24 @@ def show_translate_page(page: ft.Page, router):
                     content=ft.TextField(
                         hint_text="Type",
                         border=ft.InputBorder.NONE,
-                        cursor_color=ft.Colors.BLACK,
+                        cursor_color=ft.colors.BLACK,
                         text_style=ft.TextStyle(
-                            color=ft.Colors.BLACK,
+                            color=ft.colors.BLACK,
                         ),
                         on_submit=lambda e: send_user_message(e.control.value),
                     ),
-                    bgcolor=ft.Colors.GREY_200,
+                    bgcolor=ft.colors.GREY_200,
                     border_radius=25,
                     padding=ft.padding.only(left=20, right=20),
                     expand=True,
                 ),
                 ft.Container(
                     content=ft.IconButton(
-                        icon=ft.Icons.CAMERA_ALT_ROUNDED,
-                        icon_color=ft.Colors.BLACK54,
+                        icon=ft.icons.CAMERA_ALT_ROUNDED,
+                        icon_color=ft.colors.BLACK54,
                         on_click=lambda e: toggle_camera(page),  # Toggle camera on button click
                     ),
-                    bgcolor=ft.Colors.GREY_200,
+                    bgcolor=ft.colors.GREY_200,
                     border_radius=25,
                 ),
             ],
@@ -175,10 +180,10 @@ def show_translate_page(page: ft.Page, router):
 
     # Page configuration
     page.clean()
-    page.bgcolor = ft.Colors.WHITE
+    page.bgcolor = ft.colors.WHITE
     page.padding = 0
-    page.window.width = 400
-    page.window.height = 800
+    page.window_width = 400
+    page.window_height = 800
 
     # Main layout
     content = ft.Column(
@@ -202,7 +207,6 @@ def show_translate_page(page: ft.Page, router):
 
         # Attempt to open IP webcam first
         if ip_webcam_url:
-            print(f"Trying to access IP Webcam at {ip_webcam_url}...")
             cap = cv2.VideoCapture(ip_webcam_url)
 
             # Wait for the camera to open with a timeout
@@ -243,7 +247,6 @@ def show_translate_page(page: ft.Page, router):
         
         # Check if the landmarks have the correct size (63 per hand)
         if len(landmarks) != 63:  # For one hand, we expect 63 values (21 landmarks * 3 values per landmark)
-            print(f"Warning: Unexpected landmark size {len(landmarks)}. Expected 63 values for one hand.")
             return None
         
         # Normalize landmarks (optional, if required by the model)
@@ -287,7 +290,7 @@ def show_translate_page(page: ft.Page, router):
 
         while update_thread_running:
             if not cap or not cap.isOpened():
-                print("Camera feed not available at " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+                print("Camera feed not available")
                 continue
 
             try:
@@ -345,10 +348,7 @@ def show_translate_page(page: ft.Page, router):
             page.update()
 
     def play_video(video_path, page):
-        global video_playing  # Declare the flag as global
-        
-        print(f"Playing video: {video_path}")
-        
+        global video_playing
         # Check if the video exists or not
         cap_video = cv2.VideoCapture(video_path)
 
@@ -407,6 +407,10 @@ def show_translate_page(page: ft.Page, router):
     def toggle_camera(page):
         global cap, update_thread_running, video_playing, cameraClosed
         if not cap or not cap.isOpened():
+            if open_camera():
+                pass
+            else:
+                print("Error: Camera not accessible.")
             start_update_thread()
             # Make the camera preview bigger when recording
             camera_section.width = 400  # Keep the width same
@@ -437,7 +441,6 @@ def show_translate_page(page: ft.Page, router):
     # Handle user input and display user message
     def send_user_message(user_input):
         global user_input_global, video_playing  # Declare that we are using the global variable
-        print(user_input)
         user_message_text.value = user_input  # Update the text content
         user_message.controls[0].visible = True  # Make the user message visible
         page.update()
@@ -445,8 +448,6 @@ def show_translate_page(page: ft.Page, router):
 
         if not video_playing:
             video_playing = True  # Set flag to prevent replay
-            print(f"Attempting to play video for gesture: {user_input_global}")
-            
             video_found = False  # Track whether a matching video is found
             user_input_words = user_input_global.lower().split()  # Split input into words
 
@@ -457,7 +458,6 @@ def show_translate_page(page: ft.Page, router):
                     # Compare each word from the user input with the video file name (case insensitive)
                     if word == video_file_name_without_extension.lower():
                         video_path = os.path.join(video_folder_path, video_file)
-                        print(f"Video path: {video_path}")
                         play_video(video_path, page)
                         video_found = True
                         message_text.value = "Playing video..."
@@ -465,7 +465,6 @@ def show_translate_page(page: ft.Page, router):
                         break  # Exit the inner loop if a match is found
 
             if not video_found:
-                print(f"No matching video found for user input: {user_input_global}")
                 message_text.value = "No matching video found."
                 ai_message.visible = True
                 page.update()
@@ -476,7 +475,7 @@ def show_translate_page(page: ft.Page, router):
     return ft.View(
         route="/translate",
         controls=[content],
-        bgcolor=ft.Colors.WHITE,
+        bgcolor=ft.colors.WHITE,
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )  
