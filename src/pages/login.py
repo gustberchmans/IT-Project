@@ -68,15 +68,6 @@ def show_login_page(page: ft.Page, router):
         icon=ft.Icons.PERSON_ADD,
         on_click=lambda _: router.navigate("/register")
     )
-
-    def handle_skip_login(e):
-        set_current_user("5B2dl3egS4NzIthBnYNYQvLjWfJ3")
-        router.navigate("/home")
-
-    skip_login_button = ft.TextButton(
-        "Skip Login",
-        on_click=handle_skip_login
-    )
     
     content = ft.Column(
         controls=[
@@ -99,13 +90,12 @@ def show_login_page(page: ft.Page, router):
                 color=ft.Colors.GREY_700,
                 weight=ft.FontWeight.W_500
             ),
-           
+          
             email_field,
             password_field,
             ft.Container(height=20),
             login_button,
-            register_button,
-            skip_login_button
+            register_button
         ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         spacing=10

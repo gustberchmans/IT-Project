@@ -12,11 +12,6 @@ from components.nav_bar import NavBar
 from components.header import HeaderBar
 from collections import deque
 
-if tf.config.list_physical_devices('GPU'):
-    print("GPU is available.")
-else:
-    print("GPU is not available.")
-
 # Set the GPU device for the model
 physical_devices = tf.config.list_physical_devices('GPU')
 if physical_devices:
