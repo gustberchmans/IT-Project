@@ -57,15 +57,15 @@ def show_account_page(page: ft.Page, router):
 
     # Add back button in header
     back_button = ft.IconButton(
-        icon=ft.icons.ARROW_BACK,
+        icon=ft.Icons.ARROW_BACK,
         on_click=handle_back,
-        icon_color=ft.colors.BLACK
+        icon_color=ft.Colors.BLACK
     )
 
     # Update the profile section styling
     name_field = ft.TextField(
         value=f"{user_data['firstname']} {user_data['lastname']}", 
-        prefix_icon=ft.icons.PERSON,
+        prefix_icon=ft.Icons.PERSON,
         label="Full Name",
         border=ft.InputBorder.UNDERLINE,
         height=50,
@@ -73,7 +73,7 @@ def show_account_page(page: ft.Page, router):
 
     email_field = ft.TextField(
         value=user_data['email'],
-        prefix_icon=ft.icons.EMAIL,
+        prefix_icon=ft.Icons.EMAIL,
         label="Email",
         border=ft.InputBorder.UNDERLINE,
         height=50,
@@ -81,7 +81,7 @@ def show_account_page(page: ft.Page, router):
 
     password_field = ft.TextField(
         value="",
-        prefix_icon=ft.icons.LOCK,
+        prefix_icon=ft.Icons.LOCK,
         password=True,
         can_reveal_password=True,
         label="New Password",
@@ -127,8 +127,8 @@ def show_account_page(page: ft.Page, router):
                     "Save profile",
                     on_click=handle_save_profile,
                     style=ft.ButtonStyle(
-                        color=ft.colors.WHITE,
-                        bgcolor=ft.colors.BLUE,
+                        color=ft.Colors.WHITE,
+                        bgcolor=ft.Colors.BLUE,
                         shape=ft.RoundedRectangleBorder(radius=25),
                     ),
                     width=300,  # Made button wider
@@ -146,8 +146,8 @@ def show_account_page(page: ft.Page, router):
         # Logout button positioned in top-right corner
         ft.Container(
             content=ft.IconButton(
-                icon=ft.icons.LOGOUT,
-                icon_color=ft.colors.RED_500,
+                icon=ft.Icons.LOGOUT,
+                icon_color=ft.Colors.RED_500,
                 on_click=handle_logout,
                 tooltip="Logout",  # Added tooltip for better UX
             ),

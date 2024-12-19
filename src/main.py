@@ -12,6 +12,11 @@ from pages.learn.difficulties.d1l2 import show_d1l2_page
 from pages.learn.d1learn import show_d1learn_page
 from pages.learn.d2learn import show_d2learn_page
 from pages.learn.difficulties.d1l3 import show_d1l3_page
+import warnings
+
+# Suppress specific deprecation warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning, message=".*websockets.*")
+warnings.filterwarnings("ignore", category=DeprecationWarning, message=".*UserControl.*")
 
 def main(page: ft.Page):
     router = Router(page)

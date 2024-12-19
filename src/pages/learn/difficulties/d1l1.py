@@ -159,7 +159,7 @@ def show_d1l1_page(page: ft.Page, router):
 
     # Account icon button (top right corner)
     account_icon_button = ft.IconButton(
-        icon=ft.icons.PERSON,
+        icon=ft.Icons.PERSON,
         tooltip="Account Settings",
         on_click=lambda e: router.navigate("/account")
     )

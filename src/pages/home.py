@@ -8,7 +8,7 @@ def create_difficulty_row(difficulty_name, router, progress=0, is_locked=False):
             ft.Text(difficulty_name, size=16),
             ft.ProgressBar(value=progress, width=100),
             ft.IconButton(
-                icon=ft.icons.LOCK if is_locked else ft.icons.ARROW_FORWARD,
+                icon=ft.Icons.LOCK if is_locked else ft.Icons.ARROW_FORWARD,
                 on_click=lambda e: router.navigate(f"/{difficulty_name.lower().replace(' ', '')}"),
                 disabled=is_locked
             )
@@ -115,9 +115,9 @@ def show_home_page(page: ft.Page, router):
             )
         ]), 
         padding=20,
-        bgcolor=ft.colors.WHITE,
+        bgcolor=ft.Colors.WHITE,
         border_radius=10,
-        shadow=ft.BoxShadow(blur_radius=5, color=ft.colors.GREY_300)
+        shadow=ft.BoxShadow(blur_radius=5, color=ft.Colors.GREY_300)
     )
 
     streak_text = ft.Container(
@@ -125,7 +125,7 @@ def show_home_page(page: ft.Page, router):
             streak_message,
             size=16,
             text_align=ft.TextAlign.CENTER,
-            color=ft.colors.GREY_800
+            color=ft.Colors.GREY_800
         ),
         margin=ft.margin.only(bottom=20)
     )

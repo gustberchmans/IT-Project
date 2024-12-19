@@ -12,9 +12,9 @@ def show_register_page(page: ft.Page, router):
         label="First Name",
         border=ft.InputBorder.UNDERLINE,
         width=300,
-        prefix_icon=ft.icons.PERSON,
-        cursor_color=ft.colors.BLUE,
-        focused_border_color=ft.colors.BLUE,
+        prefix_icon=ft.Icons.PERSON,
+        cursor_color=ft.Colors.BLUE,
+        focused_border_color=ft.Colors.BLUE,
         text_size=16
     )
 
@@ -22,9 +22,9 @@ def show_register_page(page: ft.Page, router):
         label="Last Name",
         border=ft.InputBorder.UNDERLINE,
         width=300,
-        prefix_icon=ft.icons.PERSON,
-        cursor_color=ft.colors.BLUE,
-        focused_border_color=ft.colors.BLUE,
+        prefix_icon=ft.Icons.PERSON,
+        cursor_color=ft.Colors.BLUE,
+        focused_border_color=ft.Colors.BLUE,
         text_size=16
     )
 
@@ -32,9 +32,9 @@ def show_register_page(page: ft.Page, router):
         label="Email",
         border=ft.InputBorder.UNDERLINE,
         width=300,
-        prefix_icon=ft.icons.EMAIL,
-        cursor_color=ft.colors.BLUE,
-        focused_border_color=ft.colors.BLUE,
+        prefix_icon=ft.Icons.EMAIL,
+        cursor_color=ft.Colors.BLUE,
+        focused_border_color=ft.Colors.BLUE,
         text_size=16
     )
 
@@ -44,9 +44,9 @@ def show_register_page(page: ft.Page, router):
         can_reveal_password=True,
         border=ft.InputBorder.UNDERLINE,
         width=300,
-        prefix_icon=ft.icons.LOCK,
-        cursor_color=ft.colors.BLUE,
-        focused_border_color=ft.colors.BLUE,
+        prefix_icon=ft.Icons.LOCK,
+        cursor_color=ft.Colors.BLUE,
+        focused_border_color=ft.Colors.BLUE,
         text_size=16
     )
 
@@ -72,7 +72,7 @@ def show_register_page(page: ft.Page, router):
     register_button = ft.ElevatedButton(
         content=ft.Row(
             controls=[
-                ft.Icon(ft.icons.APP_REGISTRATION),
+                ft.Icon(ft.Icons.APP_REGISTRATION),
                 ft.Text("Register", size=16, weight=ft.FontWeight.BOLD)
             ],
             alignment=ft.MainAxisAlignment.CENTER,
@@ -80,8 +80,8 @@ def show_register_page(page: ft.Page, router):
         width=300,
         height=45,
         style=ft.ButtonStyle(
-            color=ft.colors.WHITE,
-            bgcolor=ft.colors.BLUE,
+            color=ft.Colors.WHITE,
+            bgcolor=ft.Colors.BLUE,
             shape=ft.RoundedRectangleBorder(radius=10),
         ),
         on_click=handle_register
@@ -89,7 +89,7 @@ def show_register_page(page: ft.Page, router):
 
     login_link = ft.TextButton(
         "Already have an account? Login",
-        icon=ft.icons.LOGIN,
+        icon=ft.Icons.LOGIN,
         on_click=lambda _: router.navigate("/login")
     )
 
@@ -97,9 +97,9 @@ def show_register_page(page: ft.Page, router):
         controls=[
             ft.Container(
                 content=ft.Icon(
-                    ft.icons.SIGN_LANGUAGE_ROUNDED,
+                    ft.Icons.SIGN_LANGUAGE_ROUNDED,
                     size=80,
-                    color=ft.colors.BLUE
+                    color=ft.Colors.BLUE
                 ),
                 margin=ft.margin.only(top=40, bottom=20)
             ),
@@ -107,12 +107,12 @@ def show_register_page(page: ft.Page, router):
                 "Create Account",
                 size=32,
                 weight=ft.FontWeight.BOLD,
-                color=ft.colors.BLUE_900
+                color=ft.Colors.BLUE_900
             ),
             ft.Text(
                 "Sign up to get started",
                 size=16,
-                color=ft.colors.GREY_700,
+                color=ft.Colors.GREY_700,
                 weight=ft.FontWeight.W_500
             ),
             ft.Container(height=20),

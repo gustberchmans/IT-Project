@@ -93,7 +93,7 @@ def show_d1l2_page(page: ft.Page, router):
         if user_answer == current_word.lower():
             state["score"] += 1
             result_text.value = "Correct! 🎉"
-            result_text.color = ft.colors.GREEN
+            result_text.color = ft.Colors.GREEN
             state["video_index"] += 1
             state["attempts"] = 0  # Reset attempts for the next question
             user_input.value = ""
@@ -106,7 +106,7 @@ def show_d1l2_page(page: ft.Page, router):
             state["attempts"] += 1
             attempts_left = max(0, 3 - state["attempts"])  # Ensure attempts don't go negative
             result_text.value = f"Incorrect! Attempts left: {attempts_left}"
-            result_text.color = ft.colors.RED
+            result_text.color = ft.Colors.RED
             user_input.value = ""
             page.update()
 
@@ -119,8 +119,8 @@ def show_d1l2_page(page: ft.Page, router):
                         on_click=lambda _: skip_question(),
                         style=ft.ButtonStyle(
                             shape=ft.RoundedRectangleBorder(radius=8),
-                            bgcolor=ft.colors.ORANGE,
-                            color=ft.colors.WHITE,
+                            bgcolor=ft.Colors.ORANGE,
+                            color=ft.Colors.WHITE,
                         ),
                         width=400,
                         height=50
@@ -164,8 +164,8 @@ def show_d1l2_page(page: ft.Page, router):
                             on_click=check_answer,
                             style=ft.ButtonStyle(
                                 shape=ft.RoundedRectangleBorder(radius=8),
-                                bgcolor=ft.colors.BLUE,
-                                color=ft.colors.WHITE,
+                                bgcolor=ft.Colors.BLUE,
+                                color=ft.Colors.WHITE,
                             ),
                             width=400,
                             height=50
@@ -184,12 +184,12 @@ def show_d1l2_page(page: ft.Page, router):
     header = ft.Row(
         controls=[
             ft.IconButton(
-                icon=ft.icons.ARROW_BACK,
+                icon=ft.Icons.ARROW_BACK,
                 tooltip="Back",
                 on_click=lambda _: router.navigate("/home")
             ),
             ft.IconButton(
-                icon=ft.icons.PERSON,
+                icon=ft.Icons.PERSON,
                 tooltip="Account Settings",
                 on_click=lambda _: router.navigate("/account")
             )

@@ -21,7 +21,7 @@ def show_results_page(page: ft.Page, router, score: str, total_questions: str):
             ft.Row(
                 controls=[
                     ft.ElevatedButton("Home", on_click=lambda e: router.navigate("/home")),
-                    ft.IconButton(icon=ft.icons.PERSON, on_click=lambda e: router.navigate("/account")),
+                    ft.IconButton(icon=ft.Icons.PERSON, on_click=lambda e: router.navigate("/account")),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 vertical_alignment=ft.CrossAxisAlignment.START,
@@ -33,7 +33,7 @@ def show_results_page(page: ft.Page, router, score: str, total_questions: str):
                     controls=[
                         # Dynamische logica voor icoon en tekst
                         ft.Icon(
-                            name=ft.icons.CHECK_CIRCLE if percentage >= 50 else ft.icons.CANCEL,
+                            name=ft.Icons.CHECK_CIRCLE if percentage >= 50 else ft.Icons.CANCEL,
                             size=100,
                             color="green" if percentage >= 50 else "red"
                         ),

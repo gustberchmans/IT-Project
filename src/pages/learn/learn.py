@@ -28,7 +28,7 @@ def create_difficulty_row(difficulty_name, router, is_locked=False):
             )
         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
         padding=10,  # Kleinere padding
-        bgcolor=ft.colors.TRANSPARENT,  # Geen achtergrondkleur
+        bgcolor=ft.Colors.TRANSPARENT,  # Geen achtergrondkleur
         margin=ft.margin.only(top=10) if difficulty_name != "Difficulty 1" else ft.margin.only(top=0)  # Margin alleen als het niet de eerste is
     )
 
@@ -67,7 +67,7 @@ def show_learn_page(page: ft.Page, router):
         padding=25,
         margin=ft.margin.only(top=20, bottom=20),
         border_radius=ft.border_radius.only(top_left=10, top_right=10),
-        bgcolor=ft.colors.GREY_200,
+        bgcolor=ft.Colors.GREY_200,
         width=page.width,
     )
 

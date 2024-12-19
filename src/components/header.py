@@ -5,9 +5,9 @@ def HeaderBar(router):
         router.navigate_back()
 
     back_button = ft.IconButton(
-        icon=ft.icons.ARROW_CIRCLE_LEFT_OUTLINED,
+        icon=ft.Icons.ARROW_CIRCLE_LEFT_OUTLINED,
         icon_size=35,
-        icon_color=ft.colors.GREY_900,
+        icon_color=ft.Colors.GREY_900,
         on_click=handle_back,
         alignment=ft.alignment.top_right
     )

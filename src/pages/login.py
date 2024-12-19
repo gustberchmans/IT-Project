@@ -11,9 +11,9 @@ def show_login_page(page: ft.Page, router):
         label="Email",
         border=ft.InputBorder.UNDERLINE,
         width=300,
-        prefix_icon=ft.icons.EMAIL,
-        cursor_color=ft.colors.BLUE,
-        focused_border_color=ft.colors.BLUE,
+        prefix_icon=ft.Icons.EMAIL,
+        cursor_color=ft.Colors.BLUE,
+        focused_border_color=ft.Colors.BLUE,
         text_size=16
     )
 
@@ -23,9 +23,9 @@ def show_login_page(page: ft.Page, router):
         can_reveal_password=True,
         border=ft.InputBorder.UNDERLINE,
         width=300,
-        prefix_icon=ft.icons.LOCK,
-        cursor_color=ft.colors.BLUE,
-        focused_border_color=ft.colors.BLUE,
+        prefix_icon=ft.Icons.LOCK,
+        cursor_color=ft.Colors.BLUE,
+        focused_border_color=ft.Colors.BLUE,
         text_size=16
     )
 
@@ -48,7 +48,7 @@ def show_login_page(page: ft.Page, router):
     login_button = ft.ElevatedButton(
         content=ft.Row(
             controls=[
-                ft.Icon(ft.icons.LOGIN),
+                ft.Icon(ft.Icons.LOGIN),
                 ft.Text("Login", size=16, weight=ft.FontWeight.BOLD)
             ],
             alignment=ft.MainAxisAlignment.CENTER,
@@ -56,8 +56,8 @@ def show_login_page(page: ft.Page, router):
         width=300,
         height=45,
         style=ft.ButtonStyle(
-            color=ft.colors.WHITE,
-            bgcolor=ft.colors.BLUE,
+            color=ft.Colors.WHITE,
+            bgcolor=ft.Colors.BLUE,
             shape=ft.RoundedRectangleBorder(radius=10),
         ),
         on_click=handle_login
@@ -65,7 +65,7 @@ def show_login_page(page: ft.Page, router):
 
     register_button = ft.TextButton(
         "Don't have an account? Register",
-        icon=ft.icons.PERSON_ADD,
+        icon=ft.Icons.PERSON_ADD,
         on_click=lambda _: router.navigate("/register")
     )
 
@@ -82,21 +82,21 @@ def show_login_page(page: ft.Page, router):
         controls=[
             ft.Container(
                 content=ft.Icon(
-                    ft.icons.SIGN_LANGUAGE_ROUNDED,
+                    ft.Icons.SIGN_LANGUAGE_ROUNDED,
                     size=80,
-                    color=ft.colors.BLUE
+                    color=ft.Colors.BLUE
                 ),
             ),
             ft.Text(
                 "Welcome Back!",
                 size=32,
                 weight=ft.FontWeight.BOLD,
-                color=ft.colors.BLUE_900
+                color=ft.Colors.BLUE_900
             ),
             ft.Text(
                 "Sign in to continue",
                 size=16,
-                color=ft.colors.GREY_700,
+                color=ft.Colors.GREY_700,
                 weight=ft.FontWeight.W_500
             ),
            

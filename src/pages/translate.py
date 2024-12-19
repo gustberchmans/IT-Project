@@ -96,12 +96,12 @@ def show_translate_page(page: ft.Page, router):
     )
 
     # At the start of show_translate_page, create a Text control for the message
-    message_text = ft.Text("", size=14, color=ft.colors.BLACK)
+    message_text = ft.Text("", size=14, color=ft.Colors.BLACK)
 
     # Create the AI message container with the dynamic text
     ai_message = ft.Container(
         content=message_text,
-        bgcolor=ft.colors.BLUE_50,
+        bgcolor=ft.Colors.BLUE_50,
         border_radius=10,
         padding=ft.padding.all(15),
         margin=ft.margin.only(left=20, right=80),
@@ -109,14 +109,14 @@ def show_translate_page(page: ft.Page, router):
     )
 
     # User message text widget
-    user_message_text = ft.Text("", size=14, color=ft.colors.BLACK)
+    user_message_text = ft.Text("", size=14, color=ft.Colors.BLACK)
 
     # User message container aligned to the right
     user_message = ft.Row(
         controls=[ 
             ft.Container(
                 content=user_message_text,
-                bgcolor=ft.colors.GREEN_50,
+                bgcolor=ft.Colors.GREEN_50,
                 border_radius=10,
                 padding=ft.padding.all(15),
                 margin=ft.margin.only(top=10),
@@ -132,7 +132,7 @@ def show_translate_page(page: ft.Page, router):
         width=0,
         height=0,  # Set initial height to 400
         border_radius=8,
-        bgcolor=ft.colors.GREY_200,
+        bgcolor=ft.Colors.GREY_200,
         alignment=ft.alignment.center,
         margin=ft.margin.symmetric(vertical=20),
     )
@@ -148,24 +148,24 @@ def show_translate_page(page: ft.Page, router):
                     content=ft.TextField(
                         hint_text="Type",
                         border=ft.InputBorder.NONE,
-                        cursor_color=ft.colors.BLACK,
+                        cursor_color=ft.Colors.BLACK,
                         text_style=ft.TextStyle(
-                            color=ft.colors.BLACK,
+                            color=ft.Colors.BLACK,
                         ),
                         on_submit=lambda e: send_user_message(e.control.value),
                     ),
-                    bgcolor=ft.colors.GREY_200,
+                    bgcolor=ft.Colors.GREY_200,
                     border_radius=25,
                     padding=ft.padding.only(left=20, right=20),
                     expand=True,
                 ),
                 ft.Container(
                     content=ft.IconButton(
-                        icon=ft.icons.CAMERA_ALT_ROUNDED,
-                        icon_color=ft.colors.BLACK54,
+                        icon=ft.Icons.CAMERA_ALT_ROUNDED,
+                        icon_color=ft.Colors.BLACK54,
                         on_click=lambda e: toggle_camera(page),  # Toggle camera on button click
                     ),
-                    bgcolor=ft.colors.GREY_200,
+                    bgcolor=ft.Colors.GREY_200,
                     border_radius=25,
                 ),
             ],
@@ -180,7 +180,7 @@ def show_translate_page(page: ft.Page, router):
 
     # Page configuration
     page.clean()
-    page.bgcolor = ft.colors.WHITE
+    page.bgcolor = ft.Colors.WHITE
     page.padding = 0
     page.window.width = 400
     page.window.height = 800
@@ -218,7 +218,6 @@ def show_translate_page(page: ft.Page, router):
                 break
 
             if cap and cap.isOpened():
-                print("IP Webcam accessed successfully.")
                 using_ip_webcam = True
                 return True
             else:
@@ -228,7 +227,6 @@ def show_translate_page(page: ft.Page, router):
         print("Attempting to access hardware webcam...")
         cap = cv2.VideoCapture(0)
         if cap.isOpened():
-            print("Hardware webcam accessed successfully.")
             using_ip_webcam = False
             return True
         else:
@@ -414,10 +412,6 @@ def show_translate_page(page: ft.Page, router):
     def toggle_camera(page):
         global cap, update_thread_running, video_playing, cameraClosed
         if not cap or not cap.isOpened():
-            if open_camera():
-                print("Camera initialized successfully.")
-            else:
-                print("Error: Camera not accessible.")
             start_update_thread()
             # Make the camera preview bigger when recording
             camera_section.width = 400  # Keep the width same
@@ -487,7 +481,7 @@ def show_translate_page(page: ft.Page, router):
     return ft.View(
         route="/translate",
         controls=[content],
-        bgcolor=ft.colors.WHITE,
+        bgcolor=ft.Colors.WHITE,
         vertical_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )  

@@ -12,9 +12,9 @@ def show_d2learn_page(page: ft.Page, router):
                 ft.TextButton("Open", on_click=lambda e, l=lesson: print(f"Open {l}"))
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             padding=10,
-            border=ft.border.all(1, ft.colors.GREY_300),
+            border=ft.border.all(1, ft.Colors.GREY_300),
             border_radius=10,
-            bgcolor=ft.colors.WHITE,
+            bgcolor=ft.Colors.WHITE,
             margin=ft.margin.only(top=10)
         ) for lesson in lessons
     ])
