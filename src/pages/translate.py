@@ -12,6 +12,19 @@ from components.nav_bar import NavBar
 from components.header import HeaderBar
 from collections import deque
 
+if tf.config.list_physical_devices('GPU'):
+    print("GPU is available.")
+else:
+    print("GPU is not available.")
+
+# Set the GPU device for the model
+physical_devices = tf.config.list_physical_devices('GPU')
+if physical_devices:
+    tf.config.set_visible_devices(physical_devices[0], 'GPU')
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+frame_processing_time_limit = 1 / 20
+
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
@@ -54,10 +67,6 @@ ip_webcam_url = "http://10.2.88.62:8080/video"
 video_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "video")
 video_folder_path = os.path.normpath(video_folder_path)
 video_files = [f for f in os.listdir(video_folder_path) if f.endswith(".mp4")]
-
-print("Video files in the folder:")
-for video_file in video_files:
-    print(video_file)
     
 # Define global variable for user input
 user_input_global = ""
@@ -278,14 +287,14 @@ def show_translate_page(page: ft.Page, router):
         return landmarks
 
     def update_frame():
-        global cap, update_thread_running, video_playing, using_ip_webcam, img_widget  # Ensure global variables are used, using_ip_webcam, img_widget
+        global cap, update_thread_running, video_playing, using_ip_webcam, img_widget  # Ensure global variables are used
 
         last_frame_time = 0
+        frame_count = 0  # Initialize a counter for the frames
 
         while update_thread_running:
             if not cap or not cap.isOpened():
-                print("Camera feed niet beschikbaar"+ time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-                # time.sleep(0.5)
+                print("Camera feed not available at " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
                 continue
 
             try:
@@ -293,15 +302,27 @@ def show_translate_page(page: ft.Page, router):
             except Exception as e:
                 print(f"Error reading frame: {e}")
                 continue
-            
+
             if not ret:
-                print("Fout bij het vastleggen van afbeelding")
+                print("Error capturing image")
+                continue
+
+            # Skip every third frame
+            frame_count += 1
+            if frame_count % 3 == 0:
                 continue
 
             # Throttle frame processing to 20 FPS for display (50ms delay between frames)
             current_time = time.time()
-            if current_time - last_frame_time < 0.05:  # ~20 FPS
-                continue
+            frame_processing_time = current_time - last_frame_time
+
+            # Calculate the sleep time
+            sleep_time = frame_processing_time_limit - frame_processing_time
+            
+            # Only sleep if the sleep time is positive
+            if sleep_time > 0:
+                time.sleep(sleep_time)  # Sleep to balance FPS
+
             last_frame_time = current_time
 
             if not using_ip_webcam:
@@ -309,26 +330,25 @@ def show_translate_page(page: ft.Page, router):
             else:
                 frame = cv2.flip(frame, 1)
                 frame = cv2.flip(frame, -1)
-            
+
             frame = make_square(frame)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = hands.process(rgb_frame)
             landmarks = extract_landmarks(results)
 
-            # Voer inferentie uit wanneer landmerken worden gedetecteerd
+            # Perform inference when landmarks are detected
             if landmarks is not None and len(landmarks) == 63:
                 sequence.append(landmarks)
-                perform_inference(frame)  # Pass frame as an argument
+                perform_inference(frame, page)  # Pass frame as an argument
             else:
-                #print(f"Landmarks onjuist of niet gedetecteerd: {landmarks}")
                 pass
 
-            # Encodeer en werk het frame bij voor de UI
+            # Encode and update the frame for the UI
             _, buffer = cv2.imencode(".jpg", frame)
             img_base64 = base64.b64encode(buffer).decode("utf-8")
             img_widget.src_base64 = img_base64
             
-            time.sleep(0.01)  # Sleep for 10ms to throttle the loop
+            # Avoid any additional frame processing if frame time exceeds the limit
             page.update()
 
     def play_video(video_path, page):
@@ -495,15 +515,15 @@ def make_square(frame):
         frame = frame[0:height, left:width-right]
     return frame
 
-def perform_inference(frame):
+def perform_inference(frame, page):
     global sequence, models_info, actions, debounce_buffer, debounce_threshold, message_text, ai_message
 
     if len(sequence) == 30:
         sequence_array = np.array(sequence)
 
-        # Controleer de vorm van de sequence_array
+        # Check the shape of the sequence array
         if sequence_array.shape != (30, 63):
-            print(f"Waarschuwing: sequence-vorm is {sequence_array.shape}. Verwacht (30, 63).")
+            print(f"Warning: sequence shape is {sequence_array.shape}. Expected (30, 63).")
             return
 
         predictions = {}
@@ -513,12 +533,14 @@ def perform_inference(frame):
 
             if expected_features == 63:
                 single_hand_landmarks = sequence_array.reshape(1, 30, 63)
-                pred = model.predict(single_hand_landmarks, verbose=0)[0]
+                with tf.device('/GPU:0'):  # Ensure GPU is used for inference
+                    pred = model.predict(single_hand_landmarks, verbose=0)[0]
             elif expected_features == 126:
                 input_data_full = sequence_array.reshape(1, 30, 126)
-                pred = model.predict(input_data_full, verbose=0)[0]
+                with tf.device('/GPU:0'):  # Ensure GPU is used for inference
+                    pred = model.predict(input_data_full, verbose=0)[0]
             else:
-                print(f"Model {model_name} heeft een onverwachte grootte van kenmerken.")
+                print(f"Model {model_name} has an unexpected feature size.")
                 continue
 
             pred_idx = np.argmax(pred)
@@ -526,41 +548,32 @@ def perform_inference(frame):
             label = actions[model_name][pred_idx]
             predictions[model_name] = (label, confidence)
 
-            y_offset = 30
-            for model_name, (label, confidence) in predictions.items():
-                if confidence > 0.7:
-                    color = (0, 255, 0) 
-                elif confidence > 0.4:
-                    color = (0, 255, 255)  
-                else:
-                    color = (0, 0, 255) 
+        # Filter predictions to exclude 'no_gesture'
+        filtered_predictions = {k: v for k, v in predictions.items() if v[0] != 'no_gesture'}
+        if filtered_predictions:
+            # Find the prediction with the highest confidence
+            best_prediction = max(filtered_predictions.items(), key=lambda x: x[1][1])
+            best_label, best_confidence = best_prediction[1]
 
-                cv2.putText(frame, f'{model_name}: {label} ({confidence:.2f})', 
-                            (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2, cv2.LINE_AA)
-                y_offset += 30
+            # Debounce for consistent gesture detection
+            debounce_buffer.append(best_label)
+            if len(debounce_buffer) >= debounce_threshold and debounce_buffer.count(best_label) == debounce_threshold:
+                # Update message and AI container if gesture is consistent
+                message_text.value = f"Detected gesture: {best_label} ({best_confidence:.2f})"
+                ai_message.visible = True
+                debounce_buffer.clear()  # Reset debounce buffer after updating
+        else:
+            message_text.value = "No valid gesture detected."
+            ai_message.visible = True
 
-                # Find the prediction with the highest confidence
-                best_prediction = max(predictions.items(), key=lambda x: x[1][1])
-                # Filter out 'no_gesture' and find the best prediction with the highest confidence
-                filtered_predictions = {k: v for k, v in predictions.items() if v[0] != 'no_gesture'}
-                if filtered_predictions:
-                    best_prediction = max(filtered_predictions.items(), key=lambda x: x[1][1])
-                else:
-                    best_prediction = max(predictions.items(), key=lambda x: x[1][1])
+        # Draw predictions on the frame
+        y_offset = 30
+        for model_name, (label, confidence) in predictions.items():
+            color = (0, 255, 0) if confidence > 0.7 else (0, 255, 255) if confidence > 0.4 else (0, 0, 255)
+            cv2.putText(frame, f'{model_name}: {label} ({confidence:.2f})',
+                        (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2, cv2.LINE_AA)
+            y_offset += 30
 
-                label, confidence = best_prediction[1]
-
-                # Debouncing to prevent flickering in predictions
-                debounce_buffer.append(label)
-                if len(debounce_buffer) > debounce_threshold:
-                    debounce_buffer.pop(0)
-
-                if len(set(debounce_buffer)) == 1:  # All items in the buffer are the same
-                    if label == 'no_gesture' and confidence < 0.6:
-                        message_text.value = f"Gebaar: {label}, {confidence:.2f} confidence."
-                    else:
-                        message_text.value = f"Gebaar: {label}, {confidence:.2f} confidence."
-                    ai_message.visible = True
-                else:
-                    ai_message.visible = False
-                label, confidence = best_prediction[1]
+        # Update UI
+        if page:
+            page.update()

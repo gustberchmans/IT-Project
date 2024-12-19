@@ -49,6 +49,8 @@ https://chatgpt.com/share/675ab5fd-876c-800b-bfdb-77968f703f75 <br>
 https://chatgpt.com/share/67629cb0-281c-800b-83e4-717d9e0b3252 <br>
 https://chatgpt.com/share/6762ac2a-7f64-800b-9cbc-6d596ba54b74 <br>
 https://chatgpt.com/share/6762ac2a-7f64-800b-9cbc-6d596ba54b74 <br>
+https://chatgpt.com/share/6763ef37-bc7c-800b-9eb1-22fd6791d36d <br>
+https://chatgpt.com/share/6763ef47-6058-800b-aa53-35cb98e85b98 <br>
 
 
 Iben:
