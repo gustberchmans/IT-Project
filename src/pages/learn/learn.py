@@ -23,7 +23,7 @@ def create_difficulty_row(difficulty_name, router, is_locked=False):
             ),
             ft.TextButton(
                 "Start",
-                on_click=lambda e, d=difficulty_name: router.navigate(f"/{d}"),
+                on_click=lambda e, d=difficulty_name: router.navigate(f"/{d.replace(' ', '').lower()}"),
                 disabled=is_locked  # Blokkeer knop als deze moeilijkheidsgraad niet ontgrendeld is
             )
         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),

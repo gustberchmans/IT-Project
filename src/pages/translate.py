@@ -284,7 +284,7 @@ def show_translate_page(page: ft.Page, router):
 
         while update_thread_running:
             if not cap or not cap.isOpened():
-                print("Camera feed niet beschikbaar")
+                print("Camera feed niet beschikbaar"+ time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
                 # time.sleep(0.5)
                 continue
 
