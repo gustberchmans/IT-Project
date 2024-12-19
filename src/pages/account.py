@@ -50,12 +50,9 @@ def show_account_page(page: ft.Page, router):
                 'email': new_email,
                 'password': hashed_password.decode('utf-8')
             })
-            print("User updated successfully!")
-            print("--------------------------")
 
             show_success_snackbar(page, "Profile updated successfully!")
         except Exception as e:
-            print(f"Error updating profile: {str(e)}")
             show_error_snackbar(page, f"Error updating profile: {str(e)}")
 
     # Add back button in header

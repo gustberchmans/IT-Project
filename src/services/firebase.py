@@ -1,5 +1,5 @@
 import firebase_admin
-from firebase_admin import credentials, firestore, storage
+from firebase_admin import credentials, firestore, auth, storage
 from functools import lru_cache
 import os
 from datetime import datetime
@@ -14,7 +14,7 @@ service_account_path = os.path.join(current_dir, "../../serviceAccountKey.json")
 try:
     cred = credentials.Certificate(service_account_path)
     firebase_admin.initialize_app(cred, {
-        'storageBucket': 'it-projectv2.firebasestorage.app'  
+        'storageBucket': 'it-projectv2.firebasestorage.app'  # Specify the storage bucket
     })
     print("------------------------------------------")
     print("Firebase app initialized successfully.")
@@ -74,11 +74,11 @@ def verify_user(email, password):
         return False, f"Login error: {str(e)}"
 
 def add_score(user_id, score, quiz_id, total_questions):
-   
+    # Reference to the scores collection
     db.collection('scores').document(user_id).set({
-        'user_id': user_id,  
+        'user_id': user_id,  # Foreign key reference to the users collection
         'score': score,
-        'quiz_id': quiz_id,  
+        'quiz_id': quiz_id,  # Optional: to identify which quiz the score is for
         'timestamp': firestore.SERVER_TIMESTAMP,
         'total_questions': total_questions
     })
@@ -91,7 +91,7 @@ def load_progress(user_id):
         if progress_doc.exists:
             return progress_doc.to_dict()
         else:
-            
+            # Hier stellen we de structuur in met de verschillende levels voor elke difficulty
             progress_ref.set({
                 'difficulty1': {
                     'd1l1': 0,
@@ -147,23 +147,31 @@ def load_progress(user_id):
         }
 
 def update_progress(user_id, difficulty, level, progress):
+    """
+    Update the progress of a specific level for a user in Firestore.
     
+    :param user_id: The ID of the user.
+    :param difficulty: The difficulty level (e.g., 'difficulty1', 'difficulty2', 'difficulty3').
+    :param level: The specific level within the difficulty (e.g., 'd1l1', 'd1l2').
+    :param progress: The progress to set (typically 0 or 1 for unfinished/finished).
+    """
     try:
-        
+        # Verkrijg het document van de gebruiker uit Firestore
         progress_ref = db.collection('progress').document(user_id)
         progress_doc = progress_ref.get()
         
         if progress_doc.exists:
-            
+            # Haal de bestaande data op
             data = progress_doc.to_dict()
 
+            # Update de voortgang van het specifieke level binnen de juiste difficulty
             if difficulty in data:
                 data[difficulty][level] = progress
             else:
-                
+                # Als de difficulty nog niet bestaat, voeg dan een nieuwe toe
                 data[difficulty] = {level: progress}
             
-            
+            # Update het document in Firestore met de nieuwe data
             progress_ref.update(data)
             print("------------------------------------------")
             print(f"Progress for {difficulty} - {level} updated to {progress}")
@@ -177,7 +185,7 @@ def update_progress(user_id, difficulty, level, progress):
         print(f"Error updating progress: {e}")
         print("------------------------------------------")
 
-
+# Functie om streak bij te werken
 def update_streak(user_id):
     try:
         streak_ref = db.collection('UserStreaks').document(user_id)
@@ -189,20 +197,20 @@ def update_streak(user_id):
             current_date = datetime.now().date()
             current_streak = data.get('streak', 0)
 
-          
+            # Bereken de dagenverschil
             days_difference = (current_date - last_date).days
             if days_difference > 1:
-                current_streak = 0  
+                current_streak = 0  # Reset streak
             elif days_difference == 1:
                 current_streak += 1
 
-            
+            # Update de streak in Firestore
             streak_ref.update({
                 'streak': current_streak,
                 'last_date': current_date.strftime('%Y-%m-%d')
             })
 
-            
+            # Bereken de totale dagen sinds de eerste streak
             total_days = (current_date - datetime.strptime(data.get('first_date', '2000-01-01'), '%Y-%m-%d').date()).days
 
             return current_streak, total_days
@@ -214,14 +222,15 @@ def update_streak(user_id):
                 'first_date': current_date.strftime('%Y-%m-%d')
             })
 
-            return 0, 0  
+            return 0, 0  # Eerste keer voor de gebruiker
     except Exception as e:
         print(f"Error updating streak: {e}")
         return 0, 0
 
-
+# Functie om de streak van een gebruiker op te halen
 def get_streak(user_id):
     try:
+        # Haal de streakgegevens op van de gebruiker
         streak_ref = db.collection('UserStreaks').document(user_id)
         streak_doc = streak_ref.get()
 
@@ -246,29 +255,30 @@ from firebase_admin import storage
 def get_videos():
     try:
         bucket = storage.bucket()
-        blobs = bucket.list_blobs(prefix='videos/')  
+        blobs = bucket.list_blobs(prefix='videos/')  # Adjust prefix if needed
         videos = []
 
-        seen_files = set()  
+        seen_files = set()  # Track already processed video names
 
         for blob in blobs:
+            # Exclude placeholder folders and ensure no duplicates
             if not blob.name.endswith('/') and blob.name not in seen_files:
-                seen_files.add(blob.name)  
+                seen_files.add(blob.name)  # Add the file name to the seen set
 
-                
+                # Generate a signed URL valid for 24 hours
                 url = blob.generate_signed_url(
-                    expiration=timedelta(seconds=86400),  
+                    expiration=timedelta(seconds=86400),  # Valid for 24 hours
                     method='GET'
                 )
                 videos.append(url)
         print("------------------------------------------")
-        print(videos)  
-        return videos  
+        print(videos)  # Debug: Print the generated URLs
+        return videos  # Return the list of URLs
     except Exception as e:
         print("------------------------------------------")
         print(f"Error getting videos: {e}")
         print("------------------------------------------")
-        return None 
+        return None  # Return None in case of an error
 
 
 

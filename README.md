@@ -55,12 +55,6 @@ https://chatgpt.com/share/6763ef47-6058-800b-aa53-35cb98e85b98 <br>
 
 Iben:
 pip install protobuf==3.20.*
-https://chatgpt.com/share/6763f385-3ea8-8007-9c16-c2c9491a235e
-https://chatgpt.com/share/6763f3a1-1d5c-8007-828e-127f0db5f6a7
-https://chatgpt.com/share/6763f40d-eda0-8007-bfe1-a634c9d4921f
-https://flet.dev/docs/
-https://chatgpt.com/share/6763f468-7b64-8007-932e-59bc11afe15b
-
 
 Jente:<br>
 Github Copilot <br>

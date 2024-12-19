@@ -18,13 +18,15 @@ def create_difficulty_row(difficulty_name, router, progress=0, is_locked=False):
     )
 
 def get_next_unfinished_lesson(progress_data):
-    
+    """
+    Returns the path to the next unfinished lesson based on the user's progress.
+    """
     for difficulty in ['difficulty1', 'difficulty2', 'difficulty3']:
         for level in ['d1l1', 'd1l2', 'd1l3'] if difficulty == 'difficulty1' else ['d2l1', 'd2l2', 'd2l3'] if difficulty == 'difficulty2' else ['d3l1', 'd3l2', 'd3l3']:
-            if progress_data[difficulty][level] == 0:  
-               
+            if progress_data[difficulty][level] == 0:  # if the level is not completed
+                # return the path of the next unfinished level
                 return f"/{level}"
-    return None  
+    return None  # If all lessons are completed
 
 def show_home_page(page: ft.Page, router):
     page.clean()
@@ -33,17 +35,20 @@ def show_home_page(page: ft.Page, router):
     page.bgcolor = "#f0f4f8"
     page.padding = 0  
 
-    
+    # Define user_id
     user_id = get_current_user()
-    progress_data = load_progress(user_id)
-    current_streak = update_streak(user_id)
-    
+
+    # Haal de streak en totaal aantal dagen op
+    current_streak, total_days = update_streak(user_id)
     streak_message = (
         "Start your streak today!" if current_streak == 0 
         else f"Make your streak {current_streak + 1} today!"
     )
     
-    
+    # Haal de voortgang op
+    progress_data = load_progress(user_id)
+
+    # Check if Difficulty 1 and Difficulty 2 are completed
     is_difficulty1_complete = (
         progress_data["difficulty1"]["d1l1"] == 1 and
         progress_data["difficulty1"]["d1l2"] == 1 and
@@ -125,7 +130,7 @@ def show_home_page(page: ft.Page, router):
         margin=ft.margin.only(bottom=20)
     )
 
-    
+    # Add these new progress bars after streak_text
     monthly_progress = min(current_streak / 30, 1.0)
     days_left_monthly = max(30 - current_streak, 0)
     
