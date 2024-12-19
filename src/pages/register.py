@@ -4,8 +4,8 @@ from utils.helpers import show_error_snackbar, show_success_snackbar
 
 def show_register_page(page: ft.Page, router):
     page.clean()
-    page.window_width = 400
-    page.window_height = 800
+    page.window.width = 400
+    page.window.height = 800
     page.bgcolor = "#f0f4f8"
 
     firstname_input = ft.TextField(

@@ -182,8 +182,8 @@ def show_translate_page(page: ft.Page, router):
     page.clean()
     page.bgcolor = ft.colors.WHITE
     page.padding = 0
-    page.window_width = 400
-    page.window_height = 800
+    page.window.width = 400
+    page.window.height = 800
 
     # Main layout
     content = ft.Column(

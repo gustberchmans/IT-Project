@@ -4,8 +4,8 @@ from utils.helpers import show_error_snackbar, show_success_snackbar
 from services.firebase import set_current_user
 
 def show_login_page(page: ft.Page, router):
-    page.window_width = 400
-    page.window_height = 800
+    page.window.width = 400
+    page.window.height = 800
 
     email_field = ft.TextField(
         label="Email",

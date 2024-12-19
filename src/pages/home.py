@@ -30,8 +30,8 @@ def get_next_unfinished_lesson(progress_data):
 
 def show_home_page(page: ft.Page, router):
     page.clean()
-    page.window_width = 400
-    page.window_height = 800
+    page.window.width = 400
+    page.window.height = 800
     page.bgcolor = "#f0f4f8"
     page.padding = 0  
 

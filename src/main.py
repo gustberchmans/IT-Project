@@ -12,11 +12,6 @@ from pages.learn.difficulties.d1l2 import show_d1l2_page
 from pages.learn.d1learn import show_d1learn_page
 from pages.learn.d2learn import show_d2learn_page
 from pages.learn.difficulties.d1l3 import show_d1l3_page
-import warnings
-
-# Suppress the specific deprecation warning
-warnings.filterwarnings("ignore", category=DeprecationWarning, message=".*window_height.*")
-warnings.filterwarnings("ignore", category=DeprecationWarning, message=".*window_width.*")
 
 def main(page: ft.Page):
     router = Router(page)
