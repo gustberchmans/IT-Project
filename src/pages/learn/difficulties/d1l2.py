@@ -1,11 +1,8 @@
 import flet as ft
 from services.firebase import add_score, get_current_user, get_videos, update_progress
-import urllib.parse
+from utils.helpers import extract_word_from_url
 
-def extract_word_from_url(url):
-    filename = urllib.parse.urlparse(url).path.split('/')[-1]
-    word, _ = filename.split('.')
-    return word
+
 
 def create_video_player(video_url):
     return ft.Container(

@@ -10,10 +10,10 @@ class NavBar(ft.UserControl):
         return ft.Container(
             content=ft.Row(
                 controls=[
-                    self._create_nav_button("", "/home", ft.Icons.HOME),
-                    self._create_nav_button("", "/learn", ft.Icons.SCHOOL),
-                    self._create_nav_button("", "/translate", ft.Icons.TRANSLATE),
-                    self._create_nav_button("", "/account", ft.Icons.PERSON),
+                    self._create_nav_button("home", "/home", ft.icons.HOME),
+                    self._create_nav_button("learn", "/learn", ft.icons.SCHOOL),
+                    self._create_nav_button("translate", "/translate", ft.icons.TRANSLATE),
+                    self._create_nav_button("account", "/account", ft.icons.PERSON),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_AROUND,
                 spacing=0
@@ -34,5 +34,5 @@ class NavBar(ft.UserControl):
             icon_size=40,
             icon_color=ft.Colors.BLUE if is_active else ft.Colors.BLACK,
             on_click=lambda _: self.router.navigate(route),
-            
+            tooltip=text.capitalize()
         )

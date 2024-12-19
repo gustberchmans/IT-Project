@@ -1,15 +1,43 @@
 import flet as ft
-from services.firebase import add_score, get_current_user, update_progress
+from services.firebase import add_score, get_current_user, update_progress, get_videos
+from utils.helpers import extract_word_from_url
+import random
+import time
+from components.header import HeaderBar
 
+def fetch_videos_and_create_questions():
+    videos = get_videos()  # Fetch videos from the bucket
+    # Randomize the video order
+    random.shuffle(videos)
+    questions = []
+    
+    # Common Dutch sign language words to use as distractors
+    dutch_signs = ["Hallo", "Dag", "Eten", "Drinken", "Eerst", "Dank je wel", 
+                  "Goedemorgen", "Tot ziens", "Alsjeblieft", "Sorry"]
+    
+    for video_url in videos:
+        correct_answer = extract_word_from_url(video_url)
+        
+        # Create options: include correct answer and exactly 3 random distractors
+        options = [correct_answer]
+        available_options = [word for word in dutch_signs if word != correct_answer]
+        random_options = random.sample(available_options, 3)  # Get exactly 3 random options
+        options.extend(random_options)
+        
+        # Shuffle the options to randomize the correct answer position
+        random.shuffle(options)
+        
+        question = {
+            "question": "Which gesture is shown?",
+            "options": options,
+            "answer": correct_answer
+        }
+        questions.append(question)
 
-# Sample quiz questions
-quiz_data = [
-    {"question": "What is 2 + 2?", "options": ["3", "4", "5", "6"], "answer": "4"},
-    {"question": "What is the capital of France?", "options": ["Berlin", "Paris", "Rome", "Madrid"], "answer": "Paris"},
-    {"question": "What is 5 * 3?", "options": ["15", "10", "20", "25"], "answer": "15"},
-    {"question": "What is the largest planet in our solar system?", "options": ["Earth", "Mars", "Jupiter", "Saturn"], "answer": "Jupiter"},
-    {"question": "What is the powerhouse of the cell?", "options": ["Nucleus", "Mitochondria", "Ribosome", "Golgi Apparatus"], "answer": "Mitochondria"},
-]
+    return questions, videos
+
+# Update quiz_data with questions from videos
+quiz_data, videos = fetch_videos_and_create_questions()
 
 def show_d1l1_page(page: ft.Page, router):
     page.clean()
@@ -34,41 +62,85 @@ def show_d1l1_page(page: ft.Page, router):
 
     # Function to display the question and options
     def display_question(question, options, answer):
+        nonlocal lives_text
+        lives_left = 3
+        lives_text.value = f"Lives left: {'❤️' * lives_left}"
+        
         def handle_answer(e):
-            nonlocal quiz_index, score, quiz_completed
-            # Controleer of de quiz al voltooid is
+            nonlocal quiz_index, score, quiz_completed, lives_left
             if quiz_completed:
-                print("Quiz is already completed. Ignoring further interactions.")
-                return  # Stop verdergaan als de quiz voltooid is
+                return
 
             if e.control.data == answer:
                 score += 1
-                result_text.value = "Correct! 🎉"
-                result_text.color = "green"
+                if quiz_index == len(quiz_data) - 1:  # If it's the last question
+                    result_text.value = "Quiz Complete! Going to results..."
+                    page.update()
+                    
+                    page.window_to_front()
+                    time.sleep(3)  # Wait 3 seconds
+                    
+                    # Add score and update progress only when going to results
+                    user_id = get_current_user()
+                    add_score(user_id, score, "difficulty1", len(quiz_data))
+                    update_progress(user_id, "difficulty1", "d1l1", 1)
+                    
+                    router.navigate(f"/results/{score}/{len(quiz_data)}")
+                else:
+                    result_text.value = "Correct! ✅"
+                    result_text.color = "green"
+                    page.update()
+                    
+                    page.window_to_front()
+                    time.sleep(1)
+                    
+                    quiz_index += 1
+                    load_question()
+                
             else:
-                result_text.value = "Wrong! 😞"
-                result_text.color = "red"
-
-            quiz_index += 1
+                lives_left -= 1
+                lives_text.value = f"Lives left: {'❤️' * lives_left}"
+                
+                if lives_left == 0:
+                    if quiz_index == len(quiz_data) - 1:  # If it's the last question
+                        result_text.value = "Quiz Complete! Going to results..."
+                        page.update()
+                        
+                        page.window_to_front()
+                        time.sleep(3)  # Wait 3 seconds
+                        router.navigate(f"/results/{score}/{len(quiz_data)}")
+                    else:
+                        result_text.value = "Wrong! ❌"
+                        result_text.color = "red"
+                        page.update()
+                        
+                        page.window_to_front()
+                        time.sleep(1)
+                        
+                        quiz_index += 1
+                        load_question()
+                else:
+                    result_text.value = "Wrong! ❌"
+                    result_text.color = "red"
+                    page.update()
+                    
+                    page.window_to_front()
+                    time.sleep(1)
+                    result_text.value = ""
+                    page.update()
+            
             progress_bar.value = (quiz_index / len(quiz_data))
             page.update()
 
-            # Controleer of de quiz is voltooid
-            if quiz_index < len(quiz_data):
-                load_question()  # Laad de volgende vraag
-            else:
-                quiz_completed = True  # Zet de quiz op voltooid
-                show_result_button.visible = True  # Toon de knop om naar de resultaten te gaan
-                result_text.value = ""  # Verberg de resultaattekst
-                page.update()
-
         progress_bar.value = (quiz_index / len(quiz_data))
 
-        # Zet de vraag en opties
+        # Get current video URL from quiz data
+        current_video = videos[quiz_index]
+        video_container.content = create_video_player(current_video)
+        
         question_text.value = question
         options_container.controls = []
 
-        # Dynamisch de knoppen maken, met een flexibele verdeling van ruimte
         for i in range(0, len(options), 2):
             options_row = ft.Row(
                 controls=[
@@ -76,19 +148,27 @@ def show_d1l1_page(page: ft.Page, router):
                         text=options[i], 
                         on_click=handle_answer, 
                         data=options[i],
-                        width=200,  # Geef de knoppen een beperkte breedte
-                        height=70,  # Verhoog de hoogte van de knoppen
-                        bgcolor="lightblue",  # Geef de knoppen een kleurtje
-                        expand=True  # Zorg ervoor dat ze zich aanpassen aan de ruimte
+                        width=200,
+                        height=80,
+                        bgcolor="LightBlue",
+                        color="white",
+                        expand=True,
+                        style=ft.ButtonStyle(
+                            shape=ft.RoundedRectangleBorder(radius=15),
+                        )
                     ),
                     ft.ElevatedButton(
                         text=options[i + 1] if i + 1 < len(options) else "", 
                         on_click=handle_answer, 
                         data=options[i + 1] if i + 1 < len(options) else "",
-                        width=200,  # Geef de knoppen een beperkte breedte
-                        height=70,  # Verhoog de hoogte van de knoppen
-                        bgcolor="lightblue",  # Geef de knoppen een kleurtje
-                        expand=True  # Zorg ervoor dat ze zich aanpassen aan de ruimte
+                        width=200,
+                        height=80,
+                        bgcolor="LightBlue",  # Darker blue
+                        color="white",
+                        expand=True,
+                        style=ft.ButtonStyle(
+                            shape=ft.RoundedRectangleBorder(radius=15),
+                        )
                     )
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
@@ -96,24 +176,22 @@ def show_d1l1_page(page: ft.Page, router):
             )
             options_container.controls.append(options_row)
         
-        result_text.value = ""  # Reset de resultaat tekst voor het volgende antwoord
+        result_text.value = ""
         page.update()
 
     # Function for the results
     def display_results():
         print("display_results called")
-        # Set progress_difficulty1 d1l1 to 1
 
         user_id = get_current_user()
         
-        page.clean()  # Maak de pagina leeg
+        page.clean()
 
-        # Save the score to Firebase
+        # Save the score to Firebase with total_questions
         user_id = get_current_user()
-        print(f"User ID: {user_id}, Score: {score}")  # Print the user_id and score
-        add_score(user_id, score, "difficulty1")
+        print(f"User ID: {user_id}, Score: {score}")
+        add_score(user_id, score, "difficulty1", len(quiz_data))
 
-        # Voeg de resultaten toe aan de pagina
         page.add(
             ft.Column(
                 controls=[
@@ -124,97 +202,95 @@ def show_d1l1_page(page: ft.Page, router):
                 expand=True,
             )
         )
-        page.update()  # Forceer een update van de pagina
+        page.update()
 
-    # UI elementen voor de quiz
-    progress_bar = ft.ProgressBar(width=300, height=20,bgcolor='#2fed98',  # Stel de achtergrondkleur in
-        border_radius=10, )  # Verhoog de hoogte van de voortgangsbalk
-    progress_bar.color = "green"  # Zet de voortgangsbalk op groen
-    question_text = ft.Text(size=20, weight="bold")
-    options_container = ft.Column(spacing=10)
-    result_text = ft.Text(size=16)
-
-    # Knop om naar resultatenpagina te gaan (zichtbaar na de laatste vraag)
-    show_result_button = ft.ElevatedButton(
-        text="Go to Results",
-        on_click=lambda e: go_to_results(),
-        visible=False  # Verberg de knop eerst
-    )
-
-    def go_to_results():
-        user_id = get_current_user()
-        update_progress(user_id, "difficulty1", "d1l1", 1)
-        print(f"User ID: {user_id}, Score: {score}")
-        total_questions = {len(quiz_data)}  # Print the user_id and score
-        add_score(user_id, score, "difficulty1", total_questions)
-        
-        router.navigate(f"/results/{score}/{len(quiz_data)}")
-
-    # Back button (top left corner)
-    back_button = ft.ElevatedButton(
-        text="Back",
-        on_click=lambda e: router.navigate("/home"),
-        bgcolor="lightgray"
-    )
-
-    # Account icon button (top right corner)
-    account_icon_button = ft.IconButton(
-        icon=ft.Icons.PERSON,
-        tooltip="Account Settings",
-        on_click=lambda e: router.navigate("/account")
+    # UI elements with improved styling
+    progress_bar = ft.ProgressBar(
+        width=350, 
+        height=15, 
+        bgcolor='#E3F2FD',
+        color="#2196F3",
+        border_radius=10
     )
     
+    question_text = ft.Text(
+        value="What gesture is shown?",  # Updated question text
+        size=20,
+        weight="bold",
+        color="#1565C0",
+        text_align=ft.TextAlign.CENTER
+    )
+    
+    options_container = ft.Column(spacing=10)
+    result_text = ft.Text(size=16)
+    lives_text = ft.Text(f"Lives left: ❤️❤️❤️", size=16, color="#1565C0")
 
-    # Layout: Camera boven en quiz beneden
+    video_container = ft.Container(
+        height=300,  # Increased from 300
+        alignment=ft.alignment.center,
+    )
+
+    # Update the content layout
     content = ft.Column(
         controls=[
-            ft.Row(
-                controls=[back_button, account_icon_button],
-                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                spacing=10,
-            ),
-            ft.Container(
-                content=ft.Text("Camera feed here (placeholder)", size=18, color="black"),
-                height=300,  # Gebruik de bovenste helft van het scherm
-                alignment=ft.alignment.center,
-                bgcolor="lightblue"
-            ),
-            
-            # Verklein de padding om de vraag dichter bij de progressie balk te plaatsen
-            ft.Container(
-                content=progress_bar,
-                padding=ft.padding.symmetric(vertical=5),  # Minder ruimte tussen vraag en progressie
+            HeaderBar(router),
+            ft.Container(  # Progress section - moved to top
+                content=ft.Column([
+                    ft.Row(
+                        [progress_bar],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                    ),
+                    ft.Container(height=5),
+                    ft.Row(
+                        [lives_text],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                    ),
+                ]),
+                padding=ft.padding.only(top=10),
                 alignment=ft.alignment.center,
             ),
-            ft.Container(
+            ft.Container(  # Video section - moved below progress bar
+                content=video_container,
+            ),
+            ft.Container(  # Question section
                 content=ft.Column(
                     controls=[
                         question_text,
-                        ft.Container(height=60),
+                        ft.Container(height=15),
                         options_container,
+                        ft.Container(height=5),
                         result_text,
                     ],
-                    alignment=ft.MainAxisAlignment.CENTER,
-                    
-                    spacing=0,  # Verklein de ruimte tussen vraag en opties
+                    alignment=ft.MainAxisAlignment.START,
+                    spacing=0,
                 ),
-                expand=True,  # Gebruik de onderste helft van het scherm
-                padding=ft.padding.all(20),
-                bgcolor="white",
+                expand=True,
+                margin=ft.margin.only(left=10, right=10),
             ),
-            ft.Row(
-                controls=[show_result_button],
-                alignment=ft.MainAxisAlignment.END,  # Zet de knop rechts
-                spacing=0,  # Geen extra ruimte
-            ),  # Voeg de knop toe aan de layout
         ],
         expand=True,
+        spacing=0,
     )
 
-    # Start de quiz
+    # Add the create_video_player function
+    def create_video_player(video_url):
+        return ft.Container(
+            content=ft.Video(
+                playlist=[ft.VideoMedia(video_url)],
+                playlist_mode=ft.PlaylistMode.LOOP,
+                aspect_ratio=16/9,
+                volume=0,
+                show_controls=False,
+                autoplay=True,
+                filter_quality=ft.FilterQuality.LOW,
+            ),
+            height=300,
+            width=500,
+            alignment=ft.alignment.center,
+        )
+
     load_question()
 
-    # Retourneer de view voor de router
     return ft.View(
         route="/difficulty1",
         controls=[content],

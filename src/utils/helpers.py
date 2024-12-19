@@ -1,6 +1,7 @@
 import re
 from typing import Any, Dict, List
 import flet as ft
+import urllib.parse
 
 def is_valid_email(email: str) -> bool:
     email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
@@ -42,3 +43,8 @@ def show_error_snackbar(page, message: str):
 
 def show_success_snackbar(page, message: str):
     show_snackbar(page, message, "green")
+
+def extract_word_from_url(url):
+    filename = urllib.parse.urlparse(url).path.split('/')[-1]
+    word, _ = filename.split('.')
+    return word

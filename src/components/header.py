@@ -18,4 +18,5 @@ def HeaderBar(router):
                 back_button
             ],
         ),
+        padding=ft.padding.only(top=20)
     )

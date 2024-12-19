@@ -55,12 +55,6 @@ def show_account_page(page: ft.Page, router):
         except Exception as e:
             show_error_snackbar(page, f"Error updating profile: {str(e)}")
 
-    # Add back button in header
-    back_button = ft.IconButton(
-        icon=ft.Icons.ARROW_BACK,
-        on_click=handle_back,
-        icon_color=ft.Colors.BLACK
-    )
 
     # Update the profile section styling
     name_field = ft.TextField(
@@ -91,14 +85,6 @@ def show_account_page(page: ft.Page, router):
 
     profile_section = ft.Container(
         content=ft.Column([
-            # Custom header with back button
-            ft.Container(
-                content=ft.Row([
-                    back_button,
-                    ft.Text("Profile", size=24, weight=ft.FontWeight.BOLD),
-                ], alignment=ft.MainAxisAlignment.START),
-                padding=ft.padding.only(bottom=20),
-            ),
             # Profile picture with network image
             ft.Container(
                 content=ft.CircleAvatar(
@@ -127,33 +113,41 @@ def show_account_page(page: ft.Page, router):
                     "Save profile",
                     on_click=handle_save_profile,
                     style=ft.ButtonStyle(
-                        color=ft.Colors.WHITE,
-                        bgcolor=ft.Colors.BLUE,
-                        shape=ft.RoundedRectangleBorder(radius=25),
+                        color=ft.colors.WHITE,
+                        bgcolor=ft.colors.BLUE,
+                        shape=ft.RoundedRectangleBorder(radius=15),
                     ),
-                    width=300,  # Made button wider
+                    width=300,
+                    height=50,
                 ),
                 alignment=ft.alignment.center,
                 padding=ft.padding.only(top=20),
             ),
         ]),
         padding=20,
+        expand=True
     )
 
-    # Create a stack to overlay the logout button
-    page_content = ft.Stack([
-        profile_section,
-        # Logout button positioned in top-right corner
-        ft.Container(
-            content=ft.IconButton(
-                icon=ft.Icons.LOGOUT,
-                icon_color=ft.Colors.RED_500,
+    # Header with back button, profile title, and logout button
+    header = ft.Container(
+        content=ft.Row([
+            HeaderBar(router),
+            ft.Text("Profile", size=24, weight=ft.FontWeight.BOLD),
+            ft.IconButton(
+                icon=ft.icons.LOGOUT,
+                icon_color=ft.colors.RED_500,
                 on_click=handle_logout,
                 tooltip="Logout",  # Added tooltip for better UX
-            ),
-            alignment=ft.alignment.top_right,
-            padding=ft.padding.only(top=20, right=20),
-        ),
+            )
+        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+        padding=ft.padding.symmetric(horizontal=20, vertical=5),
+        expand=True
+    )
+
+    # Combine header and profile section
+    page_content = ft.Column([
+        header,
+        profile_section
     ])
 
     nav_bar = NavBar(router=router, active_route="/account")
