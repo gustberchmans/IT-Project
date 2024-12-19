@@ -88,7 +88,7 @@ def show_account_page(page: ft.Page, router):
             # Profile picture with network image
             ft.Container(
                 content=ft.CircleAvatar(
-                    foreground_image_url="https://picsum.photos/200",
+                    foreground_image_url="https://fastly.picsum.photos/id/501/200/200.jpg?hmac=tKXe69j4tHhkAA_Qc3XinkTuubEWwkFVhA9TR4TmCG8",
                     radius=75,
                 ),
                 alignment=ft.alignment.center,
