@@ -48,7 +48,7 @@ video_playing = False
 cameraClosed = True
 
 # IP Webcam URL
-ip_webcam_url = "http://10.2.88.111:8080/video"
+ip_webcam_url = "http://10.2.88.62:8080/video"
 
 # Path to your video files folder
 video_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "video")
