@@ -554,14 +554,6 @@ def perform_inference(frame, page):
             message_text.value = "No valid gesture detected."
             ai_message.visible = True
 
-        # Draw predictions on the frame
-        y_offset = 30
-        for model_name, (label, confidence) in predictions.items():
-            color = (0, 255, 0) if confidence > 0.7 else (0, 255, 255) if confidence > 0.4 else (0, 0, 255)
-            cv2.putText(frame, f'{model_name}: {label} ({confidence:.2f})',
-                        (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2, cv2.LINE_AA)
-            y_offset += 30
-
         # Update UI
         if page:
             page.update()
