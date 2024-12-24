@@ -86,62 +86,12 @@ camera_section = None
 gesture_text = None
 camera_button = None
 
-# Function to show the end page
-def show_results(page, score, router):
-    user_id = get_current_user()
-    update_progress(user_id, "difficulty1", "d1l3", 1)
-    add_score(user_id, score , "gesture_game", 3)
-    
-    content = ft.Column(
-        controls=[
-            ft.Text(
-                f"Level completed! Your score: {score}/3",
-                size=28,
-                weight=ft.FontWeight.BOLD
-            ),
-            ft.ElevatedButton(
-                "Back to Home",
-                on_click=lambda _: router.navigate("/home"),
-                style=ft.ButtonStyle(
-                    shape=ft.RoundedRectangleBorder(radius=8),
-                )
-            )
-        ],
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        spacing=20
-    )
-    page.clean()
-    page.add(content)
-    page.update()
 
-def next_gesture(page):
-    global current_gesture_index, gesture_start_time, gesture_completed, debounce_buffer, score
-    global gesture_text, message_text, ai_message, camera_button
 
-    # Reset state
-    gesture_start_time = None
-    gesture_completed = False
-    debounce_buffer.clear()
 
-    # Move to next gesture
-    current_gesture_index += 1
     
-    # Check if there are more gestures
-    if current_gesture_index < len(gestures):
-        # Update UI for next gesture
-        gesture_text.value = f"Perform gesture: {gestures[current_gesture_index]}"
-        message_text.value = ""
-        ai_message.visible = False
-    else:
-        # All gestures completed
-        show_results(page, score)
-        gesture_text.value = "All exercises completed!"
-        message_text.value = "Well done!"
-        camera_button.content.text = "Finish"
-        stop_update_thread()
-        close_camera()
-    
-    page.update()
+
+
 
 def show_d1l3_page(page: ft.Page, router): # Changed function name to show_d1l3_page
     state = {
@@ -425,6 +375,148 @@ def show_d1l3_page(page: ft.Page, router): # Changed function name to show_d1l3_
             page.update()
             
             cameraClosed = True
+            
+            
+    def next_gesture(page):
+        global current_gesture_index, gesture_start_time, gesture_completed, debounce_buffer, score
+        global gesture_text, message_text, ai_message, camera_button
+
+        # Reset state
+        gesture_start_time = None
+        gesture_completed = False
+        debounce_buffer.clear()
+
+        # Move to next gesture
+        current_gesture_index += 1
+        
+        # Check if there are more gestures
+        if current_gesture_index < len(gestures):
+            # Update UI for next gesture
+            gesture_text.value = f"Perform gesture: {gestures[current_gesture_index]}"
+            message_text.value = ""
+            ai_message.visible = False
+        else:
+            # All gestures completed
+            show_results(router)
+            gesture_text.value = "All exercises completed!"
+            message_text.value = "Well done!"
+            camera_button.content.text = "Finish"
+            stop_update_thread()
+            close_camera()
+        
+        page.update()
+    
+    def show_results(router):
+        user_id = get_current_user()
+        update_progress(user_id, "difficulty1", "d1l3", 1)
+        add_score(user_id, score , "gesture_game", 3)
+        router.navigate(f"/results/3/3")
+        
+    def perform_inference(frame, page, router):
+        global gesture_start_time, gesture_completed, current_gesture_index, message_text, ai_message, gestures, score
+        
+        # Initialize defaults
+        best_label = None
+        best_confidence = 0.0
+        
+        try:
+            if len(sequence) == 30:
+                sequence_array = np.array(sequence)
+                
+                if sequence_array.shape != (30, 63):
+                    print(f"Warning: Invalid sequence shape {sequence_array.shape}")
+                    return
+                
+                # Check if the current gesture is valid
+                if current_gesture_index >= len(gestures):
+                    return # All gestures are done, so no need to perform inference anymore
+                    
+                predictions = {}
+                for model_name, info in models_info.items():
+                    model = info['model']
+                    expected_features = info['features']
+                    
+                    # Get prediction
+                    if expected_features == 63:
+                        input_data = sequence_array.reshape(1, 30, 63) 
+                        with tf.device('/GPU:0'):
+                            pred = model.predict(input_data, verbose=0)[0]
+                            pred_idx = np.argmax(pred)
+                            confidence = pred[pred_idx]
+                            label = actions[model_name][pred_idx]
+                            predictions[model_name] = (label, confidence)
+                            
+                # Filter and get best prediction
+                filtered_predictions = {k: v for k, v in predictions.items() 
+                                    if v[0] != 'no_gesture'}
+                                    
+                if filtered_predictions:
+                    best_prediction = max(filtered_predictions.items(), 
+                                        key=lambda x: x[1][1])
+                    best_label, best_confidence = best_prediction[1]
+                    
+                    current_gesture = gestures[current_gesture_index]
+                    
+                    # Handle gesture detection
+                    if best_label == current_gesture:
+                        debounce_buffer.append(best_label)
+                        if (len(debounce_buffer) >= debounce_threshold and 
+                            debounce_buffer.count(best_label) == debounce_threshold):
+                            
+                            if not gesture_start_time:
+                                gesture_start_time = time.time()
+                                
+                            elapsed_time = time.time() - gesture_start_time
+                            if elapsed_time >= gesture_hold_duration and not gesture_completed:
+                                score += 1
+                                if current_gesture_index >= len(gestures) - 1:
+                                    # All gestures completed
+                                    show_results(page, score, router)  # Pass router directly
+                                    close_camera()
+                                else:
+                                    next_gesture(page)
+                            elif not gesture_completed:
+                                message_text.value = (f"Gesture {best_label} held for "
+                                                f"{gesture_hold_duration} seconds. "
+                                                "Proceeding to next exercise.")
+                                ai_message.visible = True
+                                debounce_buffer.clear()
+                                gesture_completed = True
+                                score += 1  # Increment the score
+                                next_gesture(page)
+                            elif not gesture_completed:
+                                message_text.value = (f"Detected: {best_label} "
+                                                f"({best_confidence:.2f}). "
+                                                f"Hold for {gesture_hold_duration - int(elapsed_time)}s")
+                                ai_message.visible = True
+                                if confidence > 0.5:
+                                    debounce_buffer.clear()
+                                    gesture_completed = True
+                                    score +=1 # Increment the score
+                                    next_gesture(page)
+                                    page.update()
+                        else:
+                            message_text.value = (f"Detected: {best_label} "
+                                            f"({best_confidence:.2f}). "
+                                            f"Hold for {gesture_hold_duration}s")
+                            ai_message.visible = True
+                            page.update()
+                    else:
+                        message_text.value = f"Please perform: {current_gesture}"
+                        ai_message.visible = True
+                        debounce_buffer.clear()
+                        gesture_start_time = None
+                        page.update()
+                else:
+                    message_text.value = "No valid gesture detected"
+                    ai_message.visible = True
+                    page.update()
+                    
+        except Exception as e:
+            print(f"Error in perform_inference: {str(e)}")
+            message_text.value = "Error processing gesture"
+            ai_message.visible = True
+            page.update()
     
     # Return the View object
     return ft.View(
@@ -459,108 +551,3 @@ def make_square(frame):
         frame = frame[0:height, left:width-right]
     return frame
 
-def perform_inference(frame, page, router):
-    global gesture_start_time, gesture_completed, current_gesture_index, message_text, ai_message, gestures, score
-    
-    # Initialize defaults
-    best_label = None
-    best_confidence = 0.0
-    
-    try:
-        if len(sequence) == 30:
-            sequence_array = np.array(sequence)
-            
-            if sequence_array.shape != (30, 63):
-                print(f"Warning: Invalid sequence shape {sequence_array.shape}")
-                return
-            
-            # Check if the current gesture is valid
-            if current_gesture_index >= len(gestures):
-                return # All gestures are done, so no need to perform inference anymore
-                
-            predictions = {}
-            for model_name, info in models_info.items():
-                model = info['model']
-                expected_features = info['features']
-                
-                # Get prediction
-                if expected_features == 63:
-                    input_data = sequence_array.reshape(1, 30, 63) 
-                    with tf.device('/GPU:0'):
-                        pred = model.predict(input_data, verbose=0)[0]
-                        pred_idx = np.argmax(pred)
-                        confidence = pred[pred_idx]
-                        label = actions[model_name][pred_idx]
-                        predictions[model_name] = (label, confidence)
-                        
-            # Filter and get best prediction
-            filtered_predictions = {k: v for k, v in predictions.items() 
-                                 if v[0] != 'no_gesture'}
-                                 
-            if filtered_predictions:
-                best_prediction = max(filtered_predictions.items(), 
-                                    key=lambda x: x[1][1])
-                best_label, best_confidence = best_prediction[1]
-                
-                current_gesture = gestures[current_gesture_index]
-                
-                # Handle gesture detection
-                if best_label == current_gesture:
-                    debounce_buffer.append(best_label)
-                    if (len(debounce_buffer) >= debounce_threshold and 
-                        debounce_buffer.count(best_label) == debounce_threshold):
-                        
-                        if not gesture_start_time:
-                            gesture_start_time = time.time()
-                            
-                        elapsed_time = time.time() - gesture_start_time
-                        if elapsed_time >= gesture_hold_duration and not gesture_completed:
-                            score += 1
-                            if current_gesture_index >= len(gestures) - 1:
-                                # All gestures completed
-                                show_results(page, score, router)  # Pass router directly
-                                close_camera()
-                            else:
-                                next_gesture(page)
-                        elif not gesture_completed:
-                            message_text.value = (f"Gesture {best_label} held for "
-                                               f"{gesture_hold_duration} seconds. "
-                                               "Proceeding to next exercise.")
-                            ai_message.visible = True
-                            debounce_buffer.clear()
-                            gesture_completed = True
-                            score += 1  # Increment the score
-                            next_gesture(page)
-                        elif not gesture_completed:
-                            message_text.value = (f"Detected: {best_label} "
-                                               f"({best_confidence:.2f}). "
-                                               f"Hold for {gesture_hold_duration - int(elapsed_time)}s")
-                            ai_message.visible = True
-                            if confidence > 0.5:
-                                debounce_buffer.clear()
-                                gesture_completed = True
-                                score +=1 # Increment the score
-                                next_gesture(page)
-                                page.update()
-                    else:
-                        message_text.value = (f"Detected: {best_label} "
-                                           f"({best_confidence:.2f}). "
-                                           f"Hold for {gesture_hold_duration}s")
-                        ai_message.visible = True
-                        page.update()
-                else:
-                    message_text.value = f"Please perform: {current_gesture}"
-                    ai_message.visible = True
-                    debounce_buffer.clear()
-                    gesture_start_time = None
-                    page.update()
-            else:
-                message_text.value = "No valid gesture detected"
-                ai_message.visible = True
-                page.update()
-                
-    except Exception as e:
-        print(f"Error in perform_inference: {str(e)}")
-        message_text.value = "Error processing gesture"
-        ai_message.visible = True
-        page.update()
