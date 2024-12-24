@@ -40,6 +40,8 @@ def fetch_videos_and_create_questions():
 quiz_data, videos = fetch_videos_and_create_questions()
 
 def show_d1l1_page(page: ft.Page, router):
+    global lives_left
+    lives_left = 3
     page.clean()
 
     # Variables for progress and score
@@ -63,74 +65,67 @@ def show_d1l1_page(page: ft.Page, router):
     # Function to display the question and options
     def display_question(question, options, answer):
         nonlocal lives_text
-        lives_left = 3
+        
         lives_text.value = f"Lives left: {'❤️' * lives_left}"
         
         def handle_answer(e):
-            nonlocal quiz_index, score, quiz_completed, lives_left
+            nonlocal quiz_index, score, quiz_completed
+            global lives_left
+
             if quiz_completed:
                 return
 
-            if e.control.data == answer:
+            if e.control.data == answer:  # Correct antwoord
                 score += 1
-                if quiz_index == len(quiz_data) - 1:  # If it's the last question
+                if quiz_index == len(quiz_data) - 1:  # Laatste vraag
+                    quiz_completed = True  # Markeer quiz als voltooid
                     result_text.value = "Quiz Complete! Going to results..."
                     page.update()
-                    
-                    page.window_to_front()
-                    time.sleep(3)  # Wait 3 seconds
-                    
-                    # Add score and update progress only when going to results
+                    time.sleep(2)
+
+                    # Opslaan van de score en navigeren naar de resultatenpagina
                     user_id = get_current_user()
                     add_score(user_id, score, "difficulty1", len(quiz_data))
                     update_progress(user_id, "difficulty1", "d1l1", 1)
-                    
                     router.navigate(f"/results/{score}/{len(quiz_data)}")
                 else:
                     result_text.value = "Correct! ✅"
                     result_text.color = "green"
                     page.update()
-                    
-                    page.window_to_front()
                     time.sleep(1)
-                    
                     quiz_index += 1
                     load_question()
-                
-            else:
-                lives_left -= 1
-                lives_text.value = f"Lives left: {'❤️' * lives_left}"
-                
-                if lives_left == 0:
-                    if quiz_index == len(quiz_data) - 1:  # If it's the last question
-                        result_text.value = "Quiz Complete! Going to results..."
+
+            else:  # Verkeerd antwoord
+                if lives_left > 0:  # Controleer of er levens over zijn
+                    lives_left -= 1
+                    lives_text.value = f"Lives left: {'❤️' * lives_left}"
+                    page.update()
+
+                    if lives_left == 0:  # Geen levens meer
+                        quiz_completed = True  # Markeer quiz als voltooid
+                        result_text.value = "No lives left! Going to results..."
                         page.update()
                         
-                        page.window_to_front()
-                        time.sleep(3)  # Wait 3 seconds
+
+                        # Navigeren naar de resultatenpagina
+                        user_id = get_current_user()
+                        add_score(user_id, score, "difficulty1", len(quiz_data))
                         router.navigate(f"/results/{score}/{len(quiz_data)}")
                     else:
                         result_text.value = "Wrong! ❌"
                         result_text.color = "red"
                         page.update()
                         
-                        page.window_to_front()
-                        time.sleep(1)
-                        
-                        quiz_index += 1
-                        load_question()
+                        result_text.value = ""
+                        page.update()
                 else:
-                    result_text.value = "Wrong! ❌"
-                    result_text.color = "red"
-                    page.update()
-                    
-                    page.window_to_front()
-                    time.sleep(1)
-                    result_text.value = ""
-                    page.update()
-            
+                    print("[DEBUG] Er zijn al geen levens meer, maar deze code werd toch uitgevoerd.")
+
+            # Update voortgangsbalk
             progress_bar.value = (quiz_index / len(quiz_data))
             page.update()
+
 
         progress_bar.value = (quiz_index / len(quiz_data))
 

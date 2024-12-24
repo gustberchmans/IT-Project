@@ -93,7 +93,7 @@ camera_button = None
 
 
 
-def show_d1l3_page(page: ft.Page, router): # Changed function name to show_d1l3_page
+def show_d1l3_page(page: ft.Page, router): 
     state = {
         "exercise_index": 0,
         "score": 0,
