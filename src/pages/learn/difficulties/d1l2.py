@@ -61,29 +61,13 @@ def show_d1l2_page(page: ft.Page, router):
     def show_results():
         user_id = get_current_user()
         update_progress(user_id, "difficulty1", "d1l2", 1)
-        add_score(user_id, state["score"], "video_word_game", len(video_data))
+        add_score(user_id, state["score"], "d1l2", len(video_data))
         
-        content_container.content = ft.Column(
-            controls=[
-                ft.Text(
-                    f"Game completed! Your score: {state['score']}/{len(video_data)}",
-                    size=28,
-                    weight=ft.FontWeight.BOLD
-                ),
-                ft.ElevatedButton(
-                    "Back to Home",
-                    on_click=lambda _: router.navigate("/home"),
-                    style=ft.ButtonStyle(
-                        shape=ft.RoundedRectangleBorder(radius=8),
-                    )
-                )
-            ],
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=20
-        )
+        
+        
         page.update()
 
-    def check_answer(e):
+    def check_answer():
         current_word = video_data[state["video_index"]]["word"]
         user_answer = user_input.value.strip().lower()
         

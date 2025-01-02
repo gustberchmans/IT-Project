@@ -409,7 +409,7 @@ def show_d1l3_page(page: ft.Page, router):
     def show_results(router):
         user_id = get_current_user()
         update_progress(user_id, "difficulty1", "d1l3", 1)
-        add_score(user_id, score , "gesture_game", 3)
+        add_score(user_id, score , "d1l3", 3)
         router.navigate(f"/results/3/3")
         
     def perform_inference(frame, page, router):

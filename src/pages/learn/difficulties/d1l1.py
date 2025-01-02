@@ -59,8 +59,8 @@ def show_d1l1_page(page: ft.Page, router):
             answer = question_data["answer"]
             
             display_question(question, options, answer)
-        else:
-            display_results()  # If quiz is complete, show results
+        
+             # If quiz is complete, show results
 
     # Function to display the question and options
     def display_question(question, options, answer):
@@ -110,7 +110,7 @@ def show_d1l1_page(page: ft.Page, router):
 
                         # Navigeren naar de resultatenpagina
                         user_id = get_current_user()
-                        add_score(user_id, score, "difficulty1", len(quiz_data))
+                        add_score(user_id, score, "d1l1", len(quiz_data))
                         router.navigate(f"/results/{score}/{len(quiz_data)}")
                     else:
                         result_text.value = "Wrong! ❌"
@@ -120,7 +120,7 @@ def show_d1l1_page(page: ft.Page, router):
                         result_text.value = ""
                         page.update()
                 else:
-                    print("[DEBUG] Er zijn al geen levens meer, maar deze code werd toch uitgevoerd.")
+                    print("[DEBUG] Er zijn al geen levens mee")
 
             # Update voortgangsbalk
             progress_bar.value = (quiz_index / len(quiz_data))
@@ -175,29 +175,7 @@ def show_d1l1_page(page: ft.Page, router):
         page.update()
 
     # Function for the results
-    def display_results():
-        print("display_results called")
-
-        user_id = get_current_user()
-        
-        page.clean()
-
-        # Save the score to Firebase with total_questions
-        user_id = get_current_user()
-        print(f"User ID: {user_id}, Score: {score}")
-        add_score(user_id, score, "difficulty1", len(quiz_data))
-
-        page.add(
-            ft.Column(
-                controls=[
-                    ft.Text(f"Quiz completed! Your score: {score}/{len(quiz_data)}", size=24),
-                    ft.ElevatedButton("Back to Difficulty Selection", on_click=lambda e: router.navigate("/learn")),
-                ],
-                alignment=ft.MainAxisAlignment.CENTER,
-                expand=True,
-            )
-        )
-        page.update()
+    
 
     # UI elements with improved styling
     progress_bar = ft.ProgressBar(
