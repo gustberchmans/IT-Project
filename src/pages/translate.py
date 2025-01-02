@@ -61,7 +61,7 @@ video_playing = False
 cameraClosed = True
 
 # IP Webcam URL
-ip_webcam_url = "http://10.2.88.62:8080/video"
+ip_webcam_url = "http://192.168.0.130:8080/video"
 
 # Path to your video files folder
 video_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "video")
@@ -388,10 +388,6 @@ def show_translate_page(page: ft.Page, router):
             # Update the img_widget with the new frame
             img_widget.src_base64 = frame_base64
             page.update()
-
-            # Allow for video playback to stop by pressing 'q' or user controls
-            if video_playing and cv2.waitKey(1) & 0xFF == ord('q'):
-                break
 
         cap_video.release()
         video_playing = False  # Reset the flag once the video ends
